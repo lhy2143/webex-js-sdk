@@ -2651,6 +2651,18 @@ function viewBreakouts(event) {
     return button;
   };
 
+  const createAssignSessionButton = (breakoutSession) => {
+    const button = document.createElement('button');
+
+    button.innerText = 'Assign';
+
+    button.onclick = () => {
+      breakoutSession.assign();
+    };
+
+    return button;
+  }
+
   const appendSession = (parentElement, isTrue) => {
     const sessionBooleanEl = document.createElement('div');
 
@@ -2675,6 +2687,7 @@ function viewBreakouts(event) {
     appendSession(tdRequested, breakoutSession.requested);
 
     tdControls.appendChild(createJoinSessionButton(breakoutSession));
+    tdControls.appendChild(createAssignSessionButton(breakoutSession))
   });
 
   thead.appendChild(theadRow);
@@ -2693,7 +2706,7 @@ function viewBreakouts(event) {
   currentBreakoutSessionName.innerText = meeting.breakouts.isInMainSession ? 'Main Session' : meeting.breakouts.name;
   currentBreakoutInformationEl.appendChild(currentBreakoutSessionName);
   currentBreakoutInformationEl.appendChild(createLeaveSessionButton(meeting.breakouts.currentBreakoutSession));
-  
+
 
   breakoutTable.innerHTML = '';
   breakoutTable.appendChild(currentBreakoutInformationEl);

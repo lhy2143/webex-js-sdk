@@ -105,6 +105,21 @@ const Breakout = WebexPlugin.extend({
   parseRoster(locus) {
     this.members.locusParticipantsUpdate(locus);
   },
+
+  /**
+   * assign to BO
+   * @returns {void}
+   */
+  assign() {
+    return this.request({
+      method: HTTP_VERBS.PUT,
+      uri: `${this.url}/dynamicAssign`,
+      body: {
+        editlock: {},
+        groups: [],
+      },
+    });
+  },
 });
 
 export default Breakout;
