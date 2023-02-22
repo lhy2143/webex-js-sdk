@@ -24,6 +24,7 @@ import {
 } from '@webex/plugin-meetings/src/constants';
 import {ConnectionState, Event, Errors, ErrorType, RemoteTrackType} from '@webex/internal-media-core';
 import * as StatsAnalyzerModule from '@webex/plugin-meetings/src/statsAnalyzer';
+import * as MuteStateModule from '@webex/plugin-meetings/src/meeting/muteState';
 import EventsScope from '@webex/plugin-meetings/src/common/events/events-scope';
 import Meetings, {CONSTANTS} from '@webex/plugin-meetings';
 import Meeting from '@webex/plugin-meetings/src/meeting';
@@ -37,6 +38,7 @@ import Media from '@webex/plugin-meetings/src/media/index';
 import ReconnectionManager from '@webex/plugin-meetings/src/reconnection-manager';
 import MediaUtil from '@webex/plugin-meetings/src/media/util';
 import RecordingUtil from '@webex/plugin-meetings/src/recording-controller/util';
+import ControlsOptionsUtil from '@webex/plugin-meetings/src/controls-options-manager/util';
 import LoggerProxy from '@webex/plugin-meetings/src/common/logs/logger-proxy';
 import LoggerConfig from '@webex/plugin-meetings/src/common/logs/logger-config';
 import TriggerProxy from '@webex/plugin-meetings/src/common/events/trigger-proxy';
@@ -1698,9 +1700,13 @@ describe('plugin-meetings', () => {
 
           it('skips canUpdateMedia() check on contentTracks.onended', () => {
             const {mediaProperties} = meeting;
+            let registeredListener = null;
             const fakeTrack = {
               getSettings: sinon.stub().returns({}),
               onended: sinon.stub(),
+              addEventListener: sinon.stub().callsFake((event, listener) => {
+                registeredListener = listener;
+              }),
             };
 
             sandbox.stub(mediaProperties, 'setLocalShareTrack');
@@ -1709,7 +1715,11 @@ describe('plugin-meetings', () => {
             sandbox.stub(meeting, 'stopShare').resolves(true);
             meeting.setLocalShareTrack(fakeTrack);
 
-            fakeTrack.onended();
+            assert.calledOnce(fakeTrack.addEventListener);
+            assert.calledWith(fakeTrack.addEventListener, 'ended', sinon.match.any);
+            assert.isNotNull(registeredListener);
+
+            registeredListener();
 
             assert.calledWith(meeting.stopShare, {skipSignalingCheck: true});
           });
@@ -1743,12 +1753,11 @@ describe('plugin-meetings', () => {
           });
 
           it('handleShareTrackEnded triggers an event', () => {
-            const stream = 'stream';
             const {EVENT_TYPES} = CONSTANTS;
 
             sandbox.stub(meeting, 'stopShare').resolves(true);
 
-            meeting.handleShareTrackEnded(stream);
+            meeting.handleShareTrackEnded();
 
             assert.calledWith(
               TriggerProxy.trigger,
@@ -1759,7 +1768,6 @@ describe('plugin-meetings', () => {
               },
               EVENT_TRIGGERS.MEETING_STOPPED_SHARING_LOCAL,
               {
-                stream,
                 type: EVENT_TYPES.LOCAL_SHARE,
               }
             );
@@ -2127,6 +2135,7 @@ describe('plugin-meetings', () => {
           screenshareVideo: {
             id: 'fake share track',
             getSettings: sinon.stub().returns({}),
+            addEventListener: sinon.stub()
           },
         };
 
@@ -2288,6 +2297,7 @@ describe('plugin-meetings', () => {
           screenshareVideo: {
             id: 'fake share track',
             getSettings: sinon.stub().returns({}),
+            addEventListener: sinon.stub(),
           },
         };
 
@@ -3567,6 +3577,172 @@ describe('plugin-meetings', () => {
           }
         });
       });
+      describe('Local tracks publishing', () => {
+        let audioTrack;
+        let videoTrack;
+        let videoShareTrack;
+        let createMuteStateStub;
+
+        beforeEach(() => {
+          audioTrack = {
+            id: 'audio track',
+            getSettings: sinon.stub().returns({}),
+          };
+          videoTrack = {
+            id: 'video track',
+            getSettings: sinon.stub().returns({}),
+          };
+          videoShareTrack = {
+            id: 'share track',
+            addEventListener: sinon.stub(),
+            removeEventListener: sinon.stub(),
+            getSettings: sinon.stub().returns({}),
+          };
+          meeting.requestScreenShareFloor = sinon.stub().resolves({});
+          meeting.releaseScreenShareFloor = sinon.stub().resolves({});
+          meeting.mediaProperties.mediaDirection = {sendAudio: false, sendVideo: false, sendShare: false};
+          meeting.mediaProperties.webrtcMediaConnection = {
+            publishTrack: sinon.stub().resolves({}),
+            unpublishTrack: sinon.stub().resolves({}),
+          };
+
+          createMuteStateStub = sinon.stub(MuteStateModule, 'createMuteState').returns({id: 'fake mute state instance'});
+        })
+        describe('#publishTracks', () => {
+          it('fails if there is no media connection', async () => {
+            meeting.mediaProperties.webrtcMediaConnection = undefined;
+            await assert.isRejected(meeting.publishTracks({audio: {id: 'some audio track'}}));
+          });
+
+          const checkAudioPublished = () => {
+            assert.calledWith(createMuteStateStub, 'audio', meeting, meeting.mediaProperties.mediaDirection);
+            assert.calledWith(meeting.mediaProperties.webrtcMediaConnection.publishTrack, audioTrack, 'main');
+            assert.equal(meeting.mediaProperties.audioTrack, audioTrack);
+            assert.equal(meeting.mediaProperties.mediaDirection.sendAudio, true);
+          }
+
+          const checkVideoPublished = () => {
+            assert.calledWith(createMuteStateStub, 'video', meeting, meeting.mediaProperties.mediaDirection);
+            assert.calledWith(meeting.mediaProperties.webrtcMediaConnection.publishTrack, videoTrack, 'main');
+            assert.equal(meeting.mediaProperties.videoTrack, videoTrack);
+            assert.equal(meeting.mediaProperties.mediaDirection.sendVideo, true);
+          }
+
+          const checkScreenShareVideoPublished = () => {
+            assert.calledOnce(meeting.requestScreenShareFloor);
+            assert.calledWith(meeting.mediaProperties.webrtcMediaConnection.publishTrack, videoShareTrack, 'slides');
+            assert.equal(meeting.mediaProperties.shareTrack, videoShareTrack);
+            assert.equal(meeting.mediaProperties.mediaDirection.sendShare, true);
+          }
+
+          it('requests screen share floor and publishes the screen share video track', async () => {
+            await meeting.publishTracks({screenShare: {video: videoShareTrack}});
+
+            assert.calledOnce(meeting.mediaProperties.webrtcMediaConnection.publishTrack);
+            checkScreenShareVideoPublished();
+          });
+
+          it('creates MuteState instance and publishes the track for main audio', async () => {
+            await meeting.publishTracks({microphone: audioTrack});
+
+            assert.calledOnce(createMuteStateStub);
+            assert.calledOnce(meeting.mediaProperties.webrtcMediaConnection.publishTrack);
+            checkAudioPublished();
+          });
+
+          it('creates MuteState instance and publishes the track for main video', async () => {
+            await meeting.publishTracks({camera: videoTrack});
+
+            assert.calledOnce(createMuteStateStub);
+            assert.calledOnce(meeting.mediaProperties.webrtcMediaConnection.publishTrack);
+            checkVideoPublished();
+          });
+
+          it('publishes audio, video and screen share together', async () => {
+            await meeting.publishTracks({
+              microphone: audioTrack,
+              camera: videoTrack,
+              screenShare: {
+                video: videoShareTrack,
+              }
+            });
+
+            assert.calledTwice(createMuteStateStub);
+            assert.calledThrice(meeting.mediaProperties.webrtcMediaConnection.publishTrack);
+            checkAudioPublished();
+            checkVideoPublished();
+            checkScreenShareVideoPublished();
+          })
+        });
+
+        describe('unpublishTracks', () => {
+          beforeEach(async () => {
+            await meeting.publishTracks({
+              microphone: audioTrack,
+              camera: videoTrack,
+              screenShare: {video: videoShareTrack}
+            });
+          });
+
+          const checkAudioUnpublished = () => {
+            assert.calledWith(meeting.mediaProperties.webrtcMediaConnection.unpublishTrack, audioTrack, 'main');
+
+            assert.equal(meeting.mediaProperties.audioTrack, null);
+            assert.equal(meeting.mediaProperties.mediaDirection.sendAudio, false);
+          };
+
+          const checkVideoUnpublished = () => {
+            assert.calledWith(meeting.mediaProperties.webrtcMediaConnection.unpublishTrack, videoTrack, 'main');
+
+            assert.equal(meeting.mediaProperties.videoTrack, null);
+            assert.equal(meeting.mediaProperties.mediaDirection.sendVideo, false);
+          }
+
+          const checkScreenShareVideoUnpublished = () => {
+            assert.calledWith(meeting.mediaProperties.webrtcMediaConnection.unpublishTrack, videoShareTrack, 'slides');
+
+            assert.calledOnce(meeting.requestScreenShareFloor);
+
+            assert.equal(meeting.mediaProperties.shareTrack, null);
+            assert.equal(meeting.mediaProperties.mediaDirection.sendShare, false);
+          }
+
+          it('fails if there is no media connection', async () => {
+            meeting.mediaProperties.webrtcMediaConnection = undefined;
+            await assert.isRejected(meeting.unpublishTracks([audioTrack, videoTrack, videoShareTrack]));
+          });
+
+          it('un-publishes the tracks correctly (all 3 together)', async () => {
+            await meeting.unpublishTracks([audioTrack, videoTrack, videoShareTrack]);
+
+            assert.calledThrice(meeting.mediaProperties.webrtcMediaConnection.unpublishTrack);
+            checkAudioUnpublished();
+            checkVideoUnpublished();
+            checkScreenShareVideoUnpublished();
+          });
+
+          it('un-publishes the audio track correctly', async () => {
+            await meeting.unpublishTracks([audioTrack]);
+
+            assert.calledOnce(meeting.mediaProperties.webrtcMediaConnection.unpublishTrack);
+            checkAudioUnpublished();
+          });
+
+          it('un-publishes the video track correctly', async () => {
+            await meeting.unpublishTracks([videoTrack]);
+
+            assert.calledOnce(meeting.mediaProperties.webrtcMediaConnection.unpublishTrack);
+            checkVideoUnpublished();
+          })
+
+          it('un-publishes the screen share video track correctly', async () => {
+            await meeting.unpublishTracks([videoShareTrack]);
+
+            assert.calledOnce(meeting.mediaProperties.webrtcMediaConnection.unpublishTrack);
+            checkScreenShareVideoUnpublished();
+          })
+        })
+      });
     });
 
     describe('Public Event Triggers', () => {
@@ -3748,6 +3924,7 @@ describe('plugin-meetings', () => {
       });
       describe('#setLocalShareTrack', () => {
         it('should trigger a media:ready event with local share stream', () => {
+          let registeredListener = null;
           const track = {
             getSettings: sinon.stub().returns({
               aspectRatio: '1.7',
@@ -3757,14 +3934,15 @@ describe('plugin-meetings', () => {
               displaySurface: true,
               cursor: true,
             }),
+            addEventListener: sinon.stub().callsFake((event, listener) => {
+              registeredListener = listener;
+            }),
           };
-          const getVideoTracks = sinon.stub().returns([track]);
 
           meeting.mediaProperties.setLocalShareTrack = sinon.stub().returns(true);
-          meeting.mediaProperties.shareTrack = {getVideoTracks, getSettings: track.getSettings};
           meeting.stopShare = sinon.stub().resolves(true);
           meeting.mediaProperties.mediaDirection = {};
-          meeting.setLocalShareTrack(test1);
+          meeting.setLocalShareTrack(track);
           assert.calledTwice(TriggerProxy.trigger);
           assert.calledWith(
             TriggerProxy.trigger,
@@ -3774,7 +3952,8 @@ describe('plugin-meetings', () => {
           );
           assert.calledOnce(meeting.mediaProperties.setLocalShareTrack);
           assert.equal(meeting.mediaProperties.localStream, undefined);
-          meeting.mediaProperties.shareTrack.onended();
+          assert.isNotNull(registeredListener);
+          registeredListener();
           assert.calledOnce(meeting.stopShare);
         });
       });
@@ -4241,6 +4420,7 @@ describe('plugin-meetings', () => {
 
           meeting.members = {locusUrlUpdate: sinon.stub().returns(Promise.resolve(test1))};
           meeting.recordingController = {setLocusUrl: sinon.stub().returns(undefined)};
+          meeting.controlsOptionsManager = {setLocusUrl: sinon.stub().returns(undefined)};
 
           meeting.breakouts.locusUrlUpdate = sinon.stub();
 
@@ -4252,6 +4432,7 @@ describe('plugin-meetings', () => {
           assert.calledOnceWithExactly(meeting.breakouts.locusUrlUpdate, newLocusUrl);
           assert.calledWith(meeting.members.locusUrlUpdate, newLocusUrl);
           assert.calledWith(meeting.recordingController.setLocusUrl, newLocusUrl);
+          assert.calledWith(meeting.controlsOptionsManager.setLocusUrl, newLocusUrl);
           assert.equal(meeting.locusUrl, newLocusUrl);
           assert(meeting.locusId, '12345');
           done();
@@ -4692,6 +4873,10 @@ describe('plugin-meetings', () => {
         let canUserStopSpy;
         let canUserPauseSpy;
         let canUserResumeSpy;
+        let canSetMuteOnEntrySpy;
+        let canUnsetMuteOnEntrySpy;
+        let canSetDisallowUnmuteSpy;
+        let canUnsetDisallowUnmuteSpy;
         let canUserRaiseHandSpy;
         let bothLeaveAndEndMeetingAvailableSpy;
         let canUserLowerAllHandsSpy;
@@ -4709,6 +4894,10 @@ describe('plugin-meetings', () => {
           canUserStopSpy = sinon.spy(RecordingUtil, 'canUserStop');
           canUserPauseSpy = sinon.spy(RecordingUtil, 'canUserPause');
           canUserResumeSpy = sinon.spy(RecordingUtil, 'canUserResume');
+          canSetMuteOnEntrySpy = sinon.spy(ControlsOptionsUtil, 'canSetMuteOnEntry');
+          canUnsetMuteOnEntrySpy = sinon.spy(ControlsOptionsUtil, 'canUnsetMuteOnEntry');
+          canSetDisallowUnmuteSpy = sinon.spy(ControlsOptionsUtil, 'canSetDisallowUnmute');
+          canUnsetDisallowUnmuteSpy = sinon.spy(ControlsOptionsUtil, 'canUnsetDisallowUnmute');
           inMeetingActionsSetSpy = sinon.spy(meeting.inMeetingActions, 'set');
           canUserRaiseHandSpy = sinon.spy(MeetingUtil, 'canUserRaiseHand');
           canUserLowerAllHandsSpy = sinon.spy(MeetingUtil, 'canUserLowerAllHands');
@@ -4754,6 +4943,10 @@ describe('plugin-meetings', () => {
           assert.calledWith(canUserStopSpy, payload.info.userDisplayHints);
           assert.calledWith(canUserPauseSpy, payload.info.userDisplayHints);
           assert.calledWith(canUserResumeSpy, payload.info.userDisplayHints);
+          assert.calledWith(canSetMuteOnEntrySpy, payload.info.userDisplayHints);
+          assert.calledWith(canUnsetMuteOnEntrySpy, payload.info.userDisplayHints);
+          assert.calledWith(canSetDisallowUnmuteSpy, payload.info.userDisplayHints);
+          assert.calledWith(canUnsetDisallowUnmuteSpy, payload.info.userDisplayHints);
           assert.calledWith(canUserRaiseHandSpy, payload.info.userDisplayHints);
           assert.calledWith(bothLeaveAndEndMeetingAvailableSpy, payload.info.userDisplayHints);
           assert.calledWith(canUserLowerAllHandsSpy, payload.info.userDisplayHints);
@@ -5904,7 +6097,7 @@ describe('plugin-meetings', () => {
         it('should send reaction with the right data and return a promise', async () => {
           meeting.locusInfo.controls = {reactions: {reactionChannelUrl: 'Fake URL'}};
 
-          const reactionPromise = meeting.sendReaction('thumbs_down', 'light');
+          const reactionPromise = meeting.sendReaction('thumb_down', 'light');
 
           assert.exists(reactionPromise.then);
           await reactionPromise;
@@ -5928,7 +6121,7 @@ describe('plugin-meetings', () => {
           meeting.locusInfo.controls = {reactions: {reactionChannelUrl: undefined}};
 
           await assert.isRejected(
-            meeting.sendReaction('thumbs_down', 'light'),
+            meeting.sendReaction('thumb_down', 'light'),
             Error,
             'Error sending reaction, service url not found.'
           );
@@ -5951,7 +6144,7 @@ describe('plugin-meetings', () => {
         it('should send a reaction with default skin tone if provided skinToneType is invalid ', async () => {
           meeting.locusInfo.controls = {reactions: {reactionChannelUrl: 'Fake URL'}};
 
-          const reactionPromise = meeting.sendReaction('thumbs_down', 'invalid_skin_tone');
+          const reactionPromise = meeting.sendReaction('thumb_down', 'invalid_skin_tone');
 
           assert.exists(reactionPromise.then);
           await reactionPromise;
@@ -5970,7 +6163,7 @@ describe('plugin-meetings', () => {
         it('should send a reaction with default skin tone if none provided', async () => {
           meeting.locusInfo.controls = {reactions: {reactionChannelUrl: 'Fake URL'}};
 
-          const reactionPromise = meeting.sendReaction('thumbs_down');
+          const reactionPromise = meeting.sendReaction('thumb_down');
 
           assert.exists(reactionPromise.then);
           await reactionPromise;

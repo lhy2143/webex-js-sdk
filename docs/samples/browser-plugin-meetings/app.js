@@ -36,6 +36,7 @@ const eventsList = document.getElementById('events-list');
 const multistreamLayoutElm = document.querySelector('#multistream-layout');
 const breakoutsList = document.getElementById('breakouts-list');
 const breakoutTable = document.getElementById('breakout-table');
+const breakoutHostOperation = document.getElementById('breakout-host-operation');
 const getStatsButton = document.getElementById('get-stats');
 
 // Disable screenshare on join in Safari patch
@@ -498,6 +499,7 @@ function joinMeeting({withMedia, withDevice} = {withMedia: false, withDevice: fa
 
           return getMediaStreams().then(() => addMedia());
         }
+        createBreakoutOperations();
       })
       .catch(() => {
         // join failed, so allow  user decide on multistream again
@@ -539,6 +541,8 @@ function leaveMeeting(meetingId) {
       meetingsJoinCaptchaElm.value = '';
       meetingsJoinMultistreamElm.disabled = false;
       enableMultistreamControls(false);
+      breakoutHostOperation.innerHTML = '';
+      breakoutTable.innerHTML = '';
     });
 }
 
@@ -1001,22 +1005,17 @@ function getMediaDevices() {
 async function publishTracks(meeting) {
   const [localStream] = currentMediaStreams;
 
-  // todo: screen share once it's supported (SPARK-377812)
+  // ignoring screen share here, as it can only be started once you're in the meeting via startScreenShare()
 
   if (localStream) {
     const localAudioTracks = localStream.getAudioTracks();
-
-    if (localAudioTracks?.length > 0) {
-      console.log('MeetingStreams#publishTracks() :: publishing local audio');
-      await meeting.media.publishTrack(localAudioTracks[0]);
-    }
-
     const localVideoTracks = localStream.getVideoTracks();
 
-    if (localVideoTracks?.length > 0) {
-      console.log('MeetingStreams#publishTracks() :: publishing local video');
-      await meeting.media.publishTrack(localVideoTracks[0]);
-    }
+    console.log(`MeetingStreams#publishTracks() :: publishing local audio (${localAudioTracks?.length > 0 ? 'yes': 'no'}) and video (${localVideoTracks?.length > 0 ? 'yes': 'no'})`);
+    await meeting.publishTracks({
+      microphone: localAudioTracks?.[0],
+      camera: localVideoTracks?.[0]
+    });
   }
   else {
     console.error('cannot publish tracks - local stream missing');
@@ -1088,7 +1087,8 @@ function setVideoInputDevice() {
     getMediaStreams({sendVideo, receiveVideo}, {video})
       .then(({localStream}) => {
         if (isMultistream) {
-          return meeting.media.publishTrack(localStream.getVideoTracks()?.[0]);
+          // ignoring sendVideo value, because it cannot be false for multistream (the UI elements from toggleSourcesMediaDirection are disabled)
+          return meeting.publishTracks({camera: localStream.getVideoTracks()?.[0]});
         }
 
         meeting.updateVideo({
@@ -1117,7 +1117,8 @@ function setAudioInputDevice() {
     getMediaStreams({sendAudio, receiveAudio}, {audio})
       .then(({localStream}) => {
         if (isMultistream) {
-          return meeting.media.publishTrack(localStream.getAudioTracks()?.[0]);
+          // ignoring sendAudio value, because it cannot be false for multistream (the UI elements from toggleSourcesMediaDirection are disabled)
+          return meeting.publishTracks({microphone: localStream.getAudioTracks()?.[0]});
         }
 
         meeting.updateAudio({
@@ -1236,13 +1237,36 @@ function toggleBNR() {
   }
 }
 
+let publishedLocalShareAudioTrack = null; // todo: stop and unset these on "unpublished" event (SPARK-399694)
+let publishedLocalShareVideoTrack = null;
+
 async function startScreenShare() {
   const meeting = getCurrentMeeting();
 
   // Using async/await to make code more readable
   console.log('MeetingControls#startScreenShare()');
   try {
-    await meeting.shareScreen();
+    if (isMultistream) {
+      const localShareStream = await navigator.mediaDevices.getDisplayMedia({audio: false}); // todo: SPARK-399690
+
+      const localShareAudioTrack = localShareStream?.getAudioTracks()?.[0];
+      const localShareVideoTrack = localShareStream?.getVideoTracks()?.[0];
+
+      await meeting.publishTracks({
+        screenShare: {
+          audio: localShareAudioTrack,
+          video: localShareVideoTrack,
+        }
+      });
+
+      publishedLocalShareAudioTrack = localShareAudioTrack;
+      publishedLocalShareVideoTrack = localShareVideoTrack;
+
+      meetingStreamsLocalShare.srcObject = localShareStream;
+    }
+    else {
+      await meeting.shareScreen();
+    }
     console.log('MeetingControls#startScreenShare() :: Successfully started sharing!');
   }
   catch (error) {
@@ -1256,7 +1280,31 @@ async function stopScreenShare() {
 
   console.log('MeetingControls#stopScreenShare()');
   try {
-    await meeting.stopShare();
+    if (isMultistream) {
+      const tracksToUnpublish = [];
+
+      if (publishedLocalShareAudioTrack) {
+        tracksToUnpublish.push(publishedLocalShareAudioTrack);
+      }
+      if (publishedLocalShareVideoTrack) {
+        tracksToUnpublish.push(publishedLocalShareVideoTrack);
+      }
+
+      if (tracksToUnpublish.length > 0) {
+        await meeting.unpublishTracks(tracksToUnpublish);
+
+        publishedLocalShareAudioTrack?.stop();
+        publishedLocalShareVideoTrack?.stop();
+
+        publishedLocalShareAudioTrack = null;
+        publishedLocalShareVideoTrack = null;
+
+        meetingStreamsLocalShare.srcObject = null;
+      }
+    }
+    else {
+      await meeting.stopShare();
+    }
     console.log('MeetingControls#stopScreenShare() :: Successfully stopped sharing!');
   }
   catch (error) {
@@ -2037,6 +2085,13 @@ function setupMultistreamEventListeners(meeting) {
 
   meeting.on('meeting:startedSharingRemote', () => {
     forceScreenShareViewLayout(meeting);
+
+    // todo: instead of here, do all this when we get "unpublished" notification from local share track (SPARK-399694)
+    meetingStreamsLocalShare.srcObject = null;
+    publishedLocalShareAudioTrack?.stop();
+    publishedLocalShareVideoTrack?.stop();
+    publishedLocalShareAudioTrack = null;
+    publishedLocalShareVideoTrack = null;
   });
 
   meeting.on('meeting:stoppedSharingRemote', () => {
@@ -2148,7 +2203,7 @@ function addMedia() {
           meetingStreamsRemoteShare.srcObject = media.stream;
           break;
         case 'localShare':
-          meetingStreamsLocalShare.srcObject = media.stream;
+          meetingStreamsLocalShare.srcObject = new MediaStream([media.track]);
           break;
       }
     });
@@ -2571,11 +2626,91 @@ function transferHostToMember(transferButton) {
   }
 }
 
+const createButton = (text, func) => {
+  const button = document.createElement('button');
+
+  button.onclick = (e) => func(e.target);
+  button.innerText = text;
+  button.setAttribute('type', 'button');
+
+  return button;
+}
+
+const createBreakoutOperations = ()=>{
+  console.log('+++++++++', meeting.breakouts);
+  const isHostUser = meeting.members.hostId === meeting.userId;
+  const hostOperationsEl = document.createElement('div');
+  let groupId = '';
+  if(isHostUser && meetingsBreakoutSupportElm.checked){
+    breakoutHostOperation.innerHTML = '';
+    const hostOperationsTitleEl = document.createElement('h3');
+    hostOperationsTitleEl.innerText = 'Host Operations';
+    hostOperationsTitleEl.setAttribute('style', 'margin-top:0');
+    const createBtn = createButton('Create Breakout Sessions', ()=>{
+      meeting.breakouts.getBreakout().then((res)=>{
+        createBtn.disabled = true;
+        startBtn.disabled = false;
+        if(res.body.groups.length){
+          groupId = res.body.groups[0].id;
+        }else{
+          const obj = [{'sessions': [{'name':'session1', "anyoneCanJoin" : true}, {'name':'session2', "anyoneCanJoin" : false}]}];
+          meeting.breakouts.create(obj).then((res)=>{
+            groupId = res.body.groups[0].id;
+          })
+        }
+      })
+    });
+    const startBtn = createButton('Start Breakout Sessions', ()=>{
+      endBtn.disabled = false;
+      startBtn.disabled = true;
+      if(groupId){
+          meeting.breakouts.start(groupId);
+      }else{
+        meeting.breakouts.getBreakout().then((res)=>{
+          meeting.breakouts.start(res.body.groups[0].id);
+        })
+      }
+    });
+    const endBtn = createButton('End Breakout Sessions', ()=>{
+      let countDown = meeting.breakouts.delayCloseTime;
+      countDown = countDown<0?0:countDown;
+      meeting.breakouts.end(groupId || '');
+      setTimeout(()=>{
+        endBtn.disabled = true;
+        startBtn.disabled = false;
+      }, countDown*1000);
+      if(countDown>0){
+        const intervalId = setInterval(()=>{
+          endBtn.innerText = `End Breakout Sessions in (${--countDown}s)`;
+          endBtn.disabled = true;
+          if(countDown === 0){
+            clearInterval(intervalId);
+            endBtn.innerText = 'End Breakout Sessions';
+          }
+        }, 1000)
+      }
+    })
+    createBtn.disabled = true;
+    startBtn.disabled = true;
+    endBtn.disabled = true;
+    startBtn.id = 'startBO';
+    endBtn.id = 'endBO';
+    createBtn.id = 'createBO';
+    hostOperationsEl.appendChild(hostOperationsTitleEl);
+    hostOperationsEl.appendChild(createBtn);
+    hostOperationsEl.appendChild(startBtn);
+    hostOperationsEl.appendChild(endBtn);
+    breakoutHostOperation.appendChild(hostOperationsEl);
+  }
+}
 function toggleBreakout() {
   var enableBox = document.getElementById("enable-breakout");
   const meeting = getCurrentMeeting();
-  var enableStates = enableBox.checked == true ? true : false;
-  meeting.toggleBreakout(enableStates);
+  if (meeting) {
+    meeting.breakouts.toggleBreakout(enableBox.checked).then(()=>{
+      document.getElementById('createBO').disabled = !enableBox.checked;
+    });
+  }
 }
 
 function viewBreakouts(event) {
@@ -2655,9 +2790,10 @@ function viewBreakouts(event) {
     const button = document.createElement('button');
 
     button.innerText = 'Assign';
-
+    const {members} = meeting.members.membersCollection;
+    const assigned = Object.values(members).map(member=>member.id)
     button.onclick = () => {
-      breakoutSession.assign();
+      breakoutSession.assign({assigned});
     };
 
     return button;
@@ -2725,16 +2861,6 @@ function viewParticipants() {
     label.setAttribute('for', id);
 
     return label;
-  }
-
-  function createButton(text, func) {
-    const button = document.createElement('button');
-
-    button.onclick = (e) => func(e.target);
-    button.innerText = text;
-    button.setAttribute('type', 'button');
-
-    return button;
   }
 
   function createHeadRow() {

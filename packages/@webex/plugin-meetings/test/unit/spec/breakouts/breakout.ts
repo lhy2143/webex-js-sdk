@@ -3,12 +3,11 @@ import Breakout from '@webex/plugin-meetings/src/breakouts/breakout';
 import Breakouts from '@webex/plugin-meetings/src/breakouts';
 import Members from '@webex/plugin-meetings/src/members';
 import MockWebex from '@webex/test-helper-mock-webex';
-import sinon from "sinon";
+import sinon from 'sinon';
+import {describe} from 'yargs';
 
-
-describe('plugin-meetings', () => {
+describe.only('plugin-meetings', () => {
   describe('breakout', () => {
-
     let webex;
     let breakout;
     let breakouts;
@@ -29,34 +28,33 @@ describe('plugin-meetings', () => {
     describe('initialize', () => {
       it('creates the object correctly', () => {
         assert.instanceOf(breakout.members, Members);
-      })
+      });
     });
 
     describe('#join', () => {
       it('makes the request as expected', async () => {
-        const result = await breakout.join()
-  
+        const result = await breakout.join();
+
         assert.calledOnceWithExactly(webex.request, {
           method: 'POST',
           uri: 'url/move',
           body: {
             groupId: 'groupId',
-            sessionId: 'sessionId'
-          }
+            sessionId: 'sessionId',
+          },
         });
-  
-        assert.equal(result, 'REQUEST_RETURN_VALUE')
+
+        assert.equal(result, 'REQUEST_RETURN_VALUE');
       });
     });
 
     describe('#leave', () => {
       it('throws error if in main sesson', async () => {
-
         breakout.set('sessionType', 'MAIN');
 
         const fn = () => {
           breakout.leave();
-        }
+        };
 
         expect(fn).to.throw(/Cannot leave the main session/);
       });
@@ -64,14 +62,14 @@ describe('plugin-meetings', () => {
       it('throws error if there is no main session', async () => {
         const fn = () => {
           breakout.leave();
-        }
+        };
 
         expect(fn).to.throw(/Cannot leave, no main session found/);
       });
 
       it('joins the main session if in a breakout', async () => {
         breakout.parent.breakouts.add({
-          sessionType: 'MAIN'
+          sessionType: 'MAIN',
         });
 
         const mainSession = breakouts.breakouts.models[0];
@@ -82,30 +80,30 @@ describe('plugin-meetings', () => {
 
         assert.calledOnceWithExactly(mainSession.join);
         assert.equal(result, 'JOIN_RETURN_VALUE');
-      })
+      });
     });
 
     describe('#askForHelp', () => {
       it('makes the request as expected', async () => {
-        const result = await breakout.askForHelp()
-  
+        const result = await breakout.askForHelp();
+
         assert.calledOnceWithExactly(webex.request, {
           method: 'POST',
           uri: 'url/help',
           body: {
             groupId: 'groupId',
-            sessionId: 'sessionId'
-          }
+            sessionId: 'sessionId',
+          },
         });
-  
-        assert.equal(result, 'REQUEST_RETURN_VALUE')
+
+        assert.equal(result, 'REQUEST_RETURN_VALUE');
       });
     });
 
     describe('#parseRoster', () => {
       it('calls locusParticipantsUpdate', () => {
         breakout.members = {
-          locusParticipantsUpdate: sinon.stub()
+          locusParticipantsUpdate: sinon.stub(),
         };
 
         const locusData = {some: 'data'};
@@ -113,7 +111,20 @@ describe('plugin-meetings', () => {
 
         assert.calledOnceWithExactly(breakout.members.locusParticipantsUpdate, locusData);
         assert.equal(result, undefined);
-      })
-    })
+      });
+    });
+
+    describe('#assign', () => {
+      it('assign attendee to a breakout session', async () => {
+        const mainSession = breakouts.breakouts.models[0];
+
+        mainSession.assign = sinon.stub().returns('ASSIGN_RETURN_VALUE');
+
+        const result = await breakout.assign({assigned: []});
+
+        assert.calledOnceWithExactly(mainSession.assign);
+        assert.equal(result, 'ASSIGN_RETURN_VALUE');
+      });
+    });
   });
 });

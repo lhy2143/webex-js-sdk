@@ -24,5 +24,8 @@
   "eslint.format.enable": true,
   "breadcrumbs.enabled": false,
   "prettier.bracketSameLine": true,
-  "prettier.configPath": ".prettierrc"
+  "prettier.configPath": ".prettierrc",
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
 }

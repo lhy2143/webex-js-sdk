@@ -107,16 +107,34 @@ const Breakout = WebexPlugin.extend({
   },
 
   /**
-   * assign to BO
+   * assign participants to breakout session
+   * @param {object} payload
    * @returns {void}
    */
-  assign() {
+  assign(payload: any) {
     return this.request({
       method: HTTP_VERBS.PUT,
-      uri: `${this.url}/dynamicAssign`,
+      uri: this.url,
       body: {
-        editlock: {},
-        groups: [],
+        groups: [
+          {
+            allowBackToMain: true,
+            allowToJoinLater: true,
+            delayCloseTime: 60,
+            duration: 0,
+            id: this.groupId,
+            sessions: [
+              {
+                anyoneCanJoin: false,
+                id: this.sessionId,
+                name: this.name,
+                assigned: [],
+                assignedEmails: [],
+                ...payload,
+              },
+            ],
+          },
+        ],
       },
     });
   },
