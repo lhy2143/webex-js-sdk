@@ -108,10 +108,11 @@ const Breakout = WebexPlugin.extend({
 
   /**
    * assign participants to breakout session
-   * @param {object} payload
+   * @param {object} sessionPayload
+   * @param {object} groupPayload
    * @returns {void}
    */
-  assign(payload: any) {
+  assign(sessionPayload: any, groupPayload: any = {}) {
     return this.request({
       method: HTTP_VERBS.PUT,
       uri: this.url,
@@ -130,9 +131,10 @@ const Breakout = WebexPlugin.extend({
                 name: this.name,
                 assigned: [],
                 assignedEmails: [],
-                ...payload,
+                ...sessionPayload,
               },
             ],
+            ...groupPayload,
           },
         ],
       },

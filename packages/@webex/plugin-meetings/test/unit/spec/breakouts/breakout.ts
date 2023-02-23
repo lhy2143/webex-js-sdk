@@ -4,7 +4,6 @@ import Breakouts from '@webex/plugin-meetings/src/breakouts';
 import Members from '@webex/plugin-meetings/src/members';
 import MockWebex from '@webex/test-helper-mock-webex';
 import sinon from 'sinon';
-import {describe} from 'yargs';
 
 describe.only('plugin-meetings', () => {
   describe('breakout', () => {
@@ -116,13 +115,10 @@ describe.only('plugin-meetings', () => {
 
     describe('#assign', () => {
       it('assign attendee to a breakout session', async () => {
-        const mainSession = breakouts.breakouts.models[0];
-
-        mainSession.assign = sinon.stub().returns('ASSIGN_RETURN_VALUE');
-
-        const result = await breakout.assign({assigned: []});
-
-        assert.calledOnceWithExactly(mainSession.assign);
+        breakout.assign = sinon.stub().returns(Promise.resolve('ASSIGN_RETURN_VALUE'));
+        const params = {assigned: []};
+        const result = await breakout.assign(params);
+        assert.calledOnceWithExactly(breakout.assign, params);
         assert.equal(result, 'ASSIGN_RETURN_VALUE');
       });
     });
