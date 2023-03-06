@@ -2649,10 +2649,10 @@ const createBreakoutOperations = ()=>{
       meeting.breakouts.getBreakout().then((res)=>{
         createBtn.disabled = true;
         startBtn.disabled = false;
-        if(res.body.groups.length){
+        if(res.body.groups?.length){
           groupId = res.body.groups[0].id;
         }else{
-          const obj = [{'sessions': [{'name':'session1', "anyoneCanJoin" : true}, {'name':'session2', "anyoneCanJoin" : false}]}];
+          const obj = [{'sessions': [{'name':'session1', "anyoneCanJoin" : true}, {'name':'session2', "anyoneCanJoin" : false},{'name':'session3', "anyoneCanJoin" : true}]}];
           meeting.breakouts.create(obj).then((res)=>{
             groupId = res.body.groups[0].id;
           })
@@ -2752,6 +2752,8 @@ function viewBreakouts(event) {
   const tdAssignedCurrent = document.createElement('td');
   const tdRequested = document.createElement('td');
   const tdControls = document.createElement('td');
+  const assignControls = document.createElement('td');
+  const moveControls = document.createElement('td');
 
   tbodyRow.appendChild(tdName);
   tbodyRow.appendChild(tdActive);
@@ -2760,6 +2762,8 @@ function viewBreakouts(event) {
   tbodyRow.appendChild(tdAssignedCurrent);
   tbodyRow.appendChild(tdRequested);
   tbodyRow.appendChild(tdControls);
+  tbodyRow.appendChild(assignControls);
+  tbodyRow.appendChild(moveControls);
 
   const createJoinSessionButton = (breakoutSession) => {
     const button = document.createElement('button');
@@ -2792,7 +2796,42 @@ function viewBreakouts(event) {
     const {members} = meeting.members.membersCollection;
     const assigned = Object.values(members).map(member=>member.id)
     button.onclick = () => {
-      breakoutSession.assign({assigned});
+      breakoutSession.assign([{
+        anyoneCanJoin: true,
+        id: breakoutSession.sessionId,
+        name: breakoutSession.name,
+        assigned,
+      }]);
+    };
+
+    return button;
+  }
+
+  const createMoveSessionButton = (breakoutSession) => {
+    const button = document.createElement('button');
+
+    button.innerText = 'Move';
+    const {members} = meeting.members.membersCollection;
+    const assigned = Object.values(members).map(member=>member.id);
+    button.onclick = () => {
+      meeting.breakouts.breakouts.forEach(bo => {
+        if (bo.sessionId !== breakoutSession.sessionId && !bo.isMain){
+          // move to main
+          breakoutSession.assign([{
+            anyoneCanJoin: true,
+            id: breakoutSession.sessionId,
+            name: breakoutSession.name,
+            assigned:[],
+          },{
+            anyoneCanJoin: true,
+            id: bo.sessionId,
+            name: bo.name,
+            assigned,
+          }])
+        }
+      });
+
+
     };
 
     return button;
@@ -2822,7 +2861,9 @@ function viewBreakouts(event) {
     appendSession(tdRequested, breakoutSession.requested);
 
     tdControls.appendChild(createJoinSessionButton(breakoutSession));
-    tdControls.appendChild(createAssignSessionButton(breakoutSession))
+    assignControls.appendChild(createAssignSessionButton(breakoutSession));
+    moveControls.appendChild(createMoveSessionButton(breakoutSession));
+
   });
 
   thead.appendChild(theadRow);

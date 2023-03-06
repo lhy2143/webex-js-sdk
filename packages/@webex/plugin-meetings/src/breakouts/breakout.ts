@@ -1,3 +1,4 @@
+import {remove, find, forEach} from 'lodash';
 /*!
  * Copyright (c) 2015-2023 Cisco Systems, Inc. See LICENSE file.
  */
@@ -108,11 +109,11 @@ const Breakout = WebexPlugin.extend({
 
   /**
    * assign participants to breakout session
-   * @param {object} sessionPayload
+   * @param {Array} sessions
    * @param {object} groupPayload
    * @returns {void}
    */
-  assign(sessionPayload: any, groupPayload: any = {}) {
+  assign(sessions: any[], groupPayload: any = {}) {
     return this.request({
       method: HTTP_VERBS.PUT,
       uri: this.url,
@@ -124,16 +125,7 @@ const Breakout = WebexPlugin.extend({
             delayCloseTime: 60,
             duration: 0,
             id: this.groupId,
-            sessions: [
-              {
-                anyoneCanJoin: false,
-                id: this.sessionId,
-                name: this.name,
-                assigned: [],
-                assignedEmails: [],
-                ...sessionPayload,
-              },
-            ],
+            sessions,
             ...groupPayload,
           },
         ],
