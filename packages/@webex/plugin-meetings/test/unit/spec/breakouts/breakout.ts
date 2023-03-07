@@ -99,6 +99,36 @@ describe.only('plugin-meetings', () => {
       });
     });
 
+    describe('#broadcast', () => {
+      it('makes the request as expected', async () => {
+        breakout.breakoutRequest.broadcast = sinon
+          .stub()
+          .returns(Promise.resolve('REQUEST_RETURN_VALUE'));
+        let result = await breakout.broadcast('hello');
+        assert.calledWithExactly(breakout.breakoutRequest.broadcast, {
+          url: 'url',
+          message: 'hello',
+          options: undefined,
+          groupId: 'groupId',
+          sessionId: 'sessionId',
+        });
+
+        assert.equal(result, 'REQUEST_RETURN_VALUE');
+
+        result = await breakout.broadcast('hello', {presenters: true, cohosts: true});
+
+        assert.calledWithExactly(breakout.breakoutRequest.broadcast, {
+          url: 'url',
+          message: 'hello',
+          options: {presenters: true, cohosts: true},
+          groupId: 'groupId',
+          sessionId: 'sessionId',
+        });
+
+        assert.equal(result, 'REQUEST_RETURN_VALUE');
+      });
+    });
+
     describe('#parseRoster', () => {
       it('calls locusParticipantsUpdate', () => {
         breakout.members = {

@@ -2626,89 +2626,58 @@ function transferHostToMember(transferButton) {
   }
 }
 
-const createButton = (text, func) => {
-  const button = document.createElement('button');
-
-  button.onclick = (e) => func(e.target);
-  button.innerText = text;
-  button.setAttribute('type', 'button');
-
-  return button;
-}
-
-const createBreakoutOperations = ()=>{
-  const isHostUser = meeting.members.hostId === meeting.userId;
-  const hostOperationsEl = document.createElement('div');
-  let groupId = '';
-  if(isHostUser && meetingsBreakoutSupportElm.checked){
-    breakoutHostOperation.innerHTML = '';
-    const hostOperationsTitleEl = document.createElement('h3');
-    hostOperationsTitleEl.innerText = 'Host Operations';
-    hostOperationsTitleEl.setAttribute('style', 'margin-top:0');
-    const createBtn = createButton('Create Breakout Sessions', ()=>{
-      meeting.breakouts.getBreakout().then((res)=>{
-        createBtn.disabled = true;
-        startBtn.disabled = false;
-        if(res.body.groups?.length){
-          groupId = res.body.groups[0].id;
-        }else{
-          const obj = [{'sessions': [{'name':'session1', "anyoneCanJoin" : true}, {'name':'session2', "anyoneCanJoin" : false},{'name':'session3', "anyoneCanJoin" : true}]}];
-          meeting.breakouts.create(obj).then((res)=>{
-            groupId = res.body.groups[0].id;
-          })
-        }
-      })
-    });
-    const startBtn = createButton('Start Breakout Sessions', ()=>{
-      endBtn.disabled = false;
-      startBtn.disabled = true;
-      if(groupId){
-          meeting.breakouts.start({id: groupId});
-      }else{
-        meeting.breakouts.getBreakout().then((res)=>{
-          meeting.breakouts.start({id: res.body.groups[0].id});
-        })
-      }
-    });
-    const endBtn = createButton('End Breakout Sessions', ()=>{
-      let countDown = meeting.breakouts.delayCloseTime;
-      countDown = countDown<0?0:countDown;
-      meeting.breakouts.end({id: groupId});
-      setTimeout(()=>{
-        endBtn.disabled = true;
-        startBtn.disabled = false;
-      }, countDown*1000);
-      if(countDown>0){
-        const intervalId = setInterval(()=>{
-          endBtn.innerText = `End Breakout Sessions in (${--countDown}s)`;
-          endBtn.disabled = true;
-          if(countDown === 0){
-            clearInterval(intervalId);
-            endBtn.innerText = 'End Breakout Sessions';
-          }
-        }, 1000)
-      }
-    })
-    createBtn.disabled = true;
-    startBtn.disabled = true;
-    endBtn.disabled = true;
-    startBtn.id = 'startBO';
-    endBtn.id = 'endBO';
-    createBtn.id = 'createBO';
-    hostOperationsEl.appendChild(hostOperationsTitleEl);
-    hostOperationsEl.appendChild(createBtn);
-    hostOperationsEl.appendChild(startBtn);
-    hostOperationsEl.appendChild(endBtn);
-    breakoutHostOperation.appendChild(hostOperationsEl);
-  }
-}
 function toggleBreakout() {
-  var enableBox = document.getElementById("enable-breakout");
-  const meeting = getCurrentMeeting();
+  const enableBox = document.getElementById("enable-breakout"),
+        meeting = getCurrentMeeting(),
+        newBreakoutDiv = document.getElementById("newBreakout-div");
+
+  const createOneBreakoutSessionButton = (breakoutSession) => {
+    const button = document.createElement('button');
+
+    button.innerText = 'CreateOneBreakoutSession';
+    button.id = 'btn-creatBreakout';
+
+    button.onclick = () => {
+      const sessions = [{'name':'session1', "anyoneCanJoin" : true}];
+      breakoutSession.create(sessions).then((result)=>{
+        if (result.body.groups) {
+          button.disabled = true;
+        }
+      }).catch((error) => {
+        console.error('Breatout#createOneBreakoutSession :: ', error.sdkMessage);
+      });
+    };
+
+    return button;
+  };
+
+  const createDeleteSessionButton = (breakoutSession) => {
+    const button = document.createElement('button');
+
+    button.innerText = 'Delete Breakout';
+
+    button.onclick = () => {
+      breakoutSession.clearSessions().then((result) => {
+        if (result.body) {
+          const btnCreat = document.getElementById('btn-creatBreakout');
+          btnCreat.disabled = false;
+        }
+      }).catch((error) => {
+        console.error('Breatout#createOneBreakoutSession :: ', error.sdkMessage);
+      });
+    };
+
+    return button;
+  };
+
   if (meeting) {
-    meeting.breakouts.toggleBreakout(enableBox.checked).then(()=>{
-      document.getElementById('createBO').disabled = !enableBox.checked;
-    });
+    meeting.breakouts.toggleBreakout(enableBox.checked);
+    if(enableBox.checked) {
+      newBreakoutDiv.appendChild(createOneBreakoutSessionButton(meeting.breakouts));
+      newBreakoutDiv.appendChild(createDeleteSessionButton(meeting.breakouts));
+    } else {
+      newBreakoutDiv.innerHTML = ""
+    }
   }
 }
 
@@ -2787,6 +2756,113 @@ function viewBreakouts(event) {
     };
 
     return button;
+  };
+  const createAskForHelpButton = (breakoutSession) => {
+    const button = document.createElement('button');
+
+    button.innerText = 'Ask for help';
+
+    button.onclick = () => {
+      breakoutSession.askForHelp();
+    };
+
+    return button;
+  };
+  const createAskAllReturnButton = (breakoutSession) => {
+    const button = document.createElement('button');
+
+    button.innerText = 'Ask all return';
+
+    button.onclick = () => {
+      meeting.breakouts.askAllToReturn();
+    };
+
+    return button;
+  };
+  const getTextByRoleKey = (roleKey) => {
+    switch (roleKey) {
+      case 'all':
+        return 'All participants in session';
+      case 'presenters':
+        return 'All presenters';
+      case 'cohosts':
+        return 'All cohosts';
+      case 'cohpres':
+        return 'All cohosts and presenters';
+      default:
+        return '';
+    }
+  }
+  const getOptionsByRoleKey = (roleKey) => {
+    switch (roleKey) {
+      case 'presenters':
+        return {presenters: true};
+      case 'cohosts':
+        return {cohosts: true};
+      case 'cohpres':
+        return {presenters: true, cohosts: true};
+      default:
+        return;
+    }
+  }
+  const createBroadcastDiv = (breakoutSession) => {
+    const containerDiv = document.createElement('div');
+    const boSelector = document.createElement('select');
+    boSelector.style.display = 'inline-block';
+    const allSession = document.createElement('option');
+    allSession.value = 'all';
+    allSession.text = 'All breakout sessions';
+    boSelector.appendChild(allSession);
+    if (!meeting.breakouts.currentBreakoutSession.isMain) {
+      const breakoutSession = meeting.breakouts.currentBreakoutSession;
+      const option = document.createElement('option');
+      option.value = breakoutSession.sessionId;
+      option.text = breakoutSession.name;
+      boSelector.appendChild(option);
+    }
+    meeting.breakouts.breakouts.forEach((breakoutSession) => {
+      if (breakoutSession.isMain) {
+        return;
+      }
+      const option = document.createElement('option');
+      option.value = breakoutSession.sessionId;
+      option.text = breakoutSession.name;
+      boSelector.appendChild(option);
+    })
+    const roleSelector = document.createElement('select');
+    roleSelector.style.display = 'inline-block';
+    ['all', 'presenters', 'cohosts', 'cohpres'].forEach((key) => {
+      const option = document.createElement('option');
+      option.value = key;
+      option.text = getTextByRoleKey(key);
+      roleSelector.appendChild(option);
+    })
+    const msgInput = document.createElement('input');
+    msgInput.style.display = 'inline-block';
+    msgInput.placeholder = 'message';
+    const button = document.createElement('button');
+
+    button.innerText = 'broadcast';
+
+    button.onclick = () => {
+      const targetBo = boSelector.value;
+      const targetRole = roleSelector.value;
+      const message = msgInput.value;
+      const options = getOptionsByRoleKey(targetRole);
+
+      if (targetBo === 'all') {
+        meeting.breakouts.broadcast(message, options);
+      } else {
+        const boInstance = meeting.breakouts.sessionId === targetBo ?
+          meeting.breakouts.currentBreakoutSession : meeting.breakouts.breakouts.get(targetBo);
+        boInstance.broadcast(message, options);
+      }
+    };
+    containerDiv.appendChild(boSelector);
+    containerDiv.appendChild(roleSelector);
+    containerDiv.appendChild(msgInput);
+    containerDiv.appendChild(button);
+    return containerDiv;
   };
 
   const createAssignSessionButton = (breakoutSession) => {
@@ -2881,9 +2957,13 @@ function viewBreakouts(event) {
 
   currentBreakoutSessionName.innerText = meeting.breakouts.isInMainSession ? 'Main Session' : meeting.breakouts.name;
   currentBreakoutInformationEl.appendChild(currentBreakoutSessionName);
+  const selfIsHost = meeting.moderator;
+  const hasBreakoutSessions = meeting.breakouts.breakouts.length > 0;
+  !meeting.breakouts.isInMainSession && !selfIsHost && currentBreakoutInformationEl.appendChild(createAskForHelpButton(meeting.breakouts.currentBreakoutSession));
+  selfIsHost && currentBreakoutInformationEl.appendChild(createAskAllReturnButton(meeting.breakouts.currentBreakoutSession));
   currentBreakoutInformationEl.appendChild(createLeaveSessionButton(meeting.breakouts.currentBreakoutSession));
 
-
+  selfIsHost && hasBreakoutSessions && currentBreakoutInformationEl.appendChild(createBroadcastDiv(meeting.breakouts.currentBreakoutSession));
   breakoutTable.innerHTML = '';
   breakoutTable.appendChild(currentBreakoutInformationEl);
   const breakoutTableTitle = document.createElement('h3');

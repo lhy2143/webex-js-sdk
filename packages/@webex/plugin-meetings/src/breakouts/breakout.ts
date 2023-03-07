@@ -8,6 +8,7 @@ import {WebexPlugin} from '@webex/webex-core';
 import {HTTP_VERBS, MEETINGS} from '../constants';
 import LocusInfo from '../locus-info';
 import Members from '../members';
+import BreakoutRequest from './request';
 
 /**
  * @class
@@ -17,6 +18,7 @@ const Breakout = WebexPlugin.extend({
 
   namespace: MEETINGS,
 
+  breakoutRequest: BreakoutRequest,
   props: {
     active: ['boolean', false, false], // this session is active
     allowed: ['boolean', false, false], // allowed to join this session
@@ -46,6 +48,8 @@ const Breakout = WebexPlugin.extend({
 
   initialize() {
     this.members = new Members({}, {parent: this.webex});
+    // @ts-ignore
+    this.breakoutRequest = new BreakoutRequest({webex: this.webex});
   },
 
   /**
@@ -130,6 +134,21 @@ const Breakout = WebexPlugin.extend({
           },
         ],
       },
+    });
+  },
+  /*
+   * Broadcast message to this breakout session's participants
+   * @param {String} message
+   * @param {Object} options
+   * @returns {Promise}
+   */
+  broadcast(message, options) {
+    return this.breakoutRequest.broadcast({
+      url: this.url,
+      message,
+      options,
+      groupId: this.groupId,
+      sessionId: this.sessionId,
     });
   },
 });

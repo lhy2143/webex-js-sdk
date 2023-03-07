@@ -119,8 +119,14 @@ breakout.remove(participant)
 // This can only be done when breakouts are inactive
 breakout.delete()
 
-// Create a breakout session
-breakouts.create(sessionName)
+/* 
+Create breakout sessions, Type is array
+Format: [{'name':'session1', "anyoneCanJoin" : true}]
+*/
+breakouts.create(sessions)
+
+// Delete all breakout sessions
+breakouts.clearSessions()
 
 // Rename an existing breakout session
 breakout.rename(newSessionName)
@@ -141,11 +147,11 @@ breakouts.disable()
 breakouts.askAllToReturn()
 
 // Send a message to a breakout session
-// You can determine which participant types receive the message
+// You can determine which participant types receive the message, if no type set, default is to all participants
 breakout.broadcast(message, {participants: boolean, cohosts: boolean, presenters: boolean})
 
 // Send a message to All breakout sessions
-// You can determine which participant types receive the message
+// You can determine which participant types receive the message,  if no type set, default is to all participants
 breakouts.broadcast(message, {participants: boolean, cohosts: boolean, presenters: boolean})
 
 // When breakouts are active you can cancel the automatic end of all sessions by calling this
