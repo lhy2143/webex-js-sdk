@@ -2993,20 +2993,6 @@ function viewBreakouts(event) {
 
     return button;
   }
-
-  const createAssignSessionButton = (breakoutSession) => {
-    const button = document.createElement('button');
-
-    button.innerText = 'Assign';
-    const {members} = meeting.members.membersCollection;
-    const assigned = Object.values(members).map(member=>member.id)
-    button.onclick = () => {
-      breakoutSession.assign({assigned});
-    };
-
-    return button;
-  }
-
   const appendSession = (parentElement, isTrue) => {
     const sessionBooleanEl = document.createElement('div');
 

@@ -126,15 +126,6 @@ const Breakouts = WebexPlugin.extend({
   },
 
   /**
-   * Update the current breakout resouce url
-   * @param {string} breakoutServiceUrl
-   * @returns {void}
-   */
-  breakoutServiceUrlUpdate(breakoutServiceUrl) {
-    this.set('breakoutServiceUrl', `${breakoutServiceUrl}/breakout/`);
-  },
-
-  /**
    * The initial roster lists need to be queried because you don't
    * get a breakout.roster event when you join the meeting
    * @returns {void}
