@@ -2,6 +2,188 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.0.0-beta.52](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.51...v3.0.0-beta.52) (2023-03-22)
+
+## [3.0.0-beta.51](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.50...v3.0.0-beta.51) (2023-03-21)
+
+
+### Features
+
+* assign attendees to bo session ([#2668](https://github.com/webex/webex-js-sdk/issues/2668)) ([278491d](https://github.com/webex/webex-js-sdk/commit/278491d58b9b3a437cf5c6d7ee0814ee9cc3410e))
+
+## [3.0.0-beta.50](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.49...v3.0.0-beta.50) (2023-03-21)
+
+
+### Bug Fixes
+
+* **metrics:** remove org_id, client_id and user_id tags from operational metrics ([#2681](https://github.com/webex/webex-js-sdk/issues/2681)) ([372840d](https://github.com/webex/webex-js-sdk/commit/372840de69c8d42bd40e5d97557e2e3c04ec585f))
+
+## [3.0.0-beta.49](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.48...v3.0.0-beta.49) (2023-03-17)
+
+
+### Bug Fixes
+
+* **remote-video-mute:** fixed remote video mute ([#2683](https://github.com/webex/webex-js-sdk/issues/2683)) ([c2fa0a4](https://github.com/webex/webex-js-sdk/commit/c2fa0a4b8ad240382667030224b33280fcf8f929))
+
+## [3.0.0-beta.48](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.47...v3.0.0-beta.48) (2023-03-17)
+
+
+### Features
+
+* **reachability:** add clientMediaIP ([#2635](https://github.com/webex/webex-js-sdk/issues/2635)) ([297a642](https://github.com/webex/webex-js-sdk/commit/297a642850bad4ced54cf76092f9d94bb28c4e69))
+
+## [3.0.0-beta.47](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.46...v3.0.0-beta.47) (2023-03-17)
+
+
+### Bug Fixes
+
+* add missing frame sizes for mqe ([#2666](https://github.com/webex/webex-js-sdk/issues/2666)) ([7434e66](https://github.com/webex/webex-js-sdk/commit/7434e6670ca8ebb523c6d03aee39ed650a172078))
+
+## [3.0.0-beta.46](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.45...v3.0.0-beta.46) (2023-03-16)
+
+
+### Bug Fixes
+
+* **conversations:** various general packages ([#2680](https://github.com/webex/webex-js-sdk/issues/2680)) ([fa65653](https://github.com/webex/webex-js-sdk/commit/fa65653bdd77fa3455aa9de5c3c693cf9edf7014))
+
+## [3.0.0-beta.45](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.44...v3.0.0-beta.45) (2023-03-16)
+
+
+### Bug Fixes
+
+* **duplicate-panes:** refactor slot allocation ([#2673](https://github.com/webex/webex-js-sdk/issues/2673)) ([51233e5](https://github.com/webex/webex-js-sdk/commit/51233e505577495c35bae5fe7da8ed58361121b5))
+
+## [3.0.0-beta.44](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.43...v3.0.0-beta.44) (2023-03-15)
+
+
+### Features
+
+* Host/Cohost - Admit user in lobby to main meeting from Breakout Session SPARK-400367 ([#2658](https://github.com/webex/webex-js-sdk/issues/2658)) ([c43e6b3](https://github.com/webex/webex-js-sdk/commit/c43e6b36212608e4f0d3f1edbb3467382e98aafa))
+* **remote-video-mute:** respect remote video mute ([#2665](https://github.com/webex/webex-js-sdk/issues/2665)) ([e6b684b](https://github.com/webex/webex-js-sdk/commit/e6b684b2b25f30360e9152f290fe6bd474066508))
+
+## [3.0.0-beta.43](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.42...v3.0.0-beta.43) (2023-03-14)
+
+
+### Features
+
+* **meetings:** mute all ([#2667](https://github.com/webex/webex-js-sdk/issues/2667)) ([c198945](https://github.com/webex/webex-js-sdk/commit/c19894556bab55b5707638a607e350a41a1ffdb5))
+
+## [3.0.0-beta.42](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.41...v3.0.0-beta.42) (2023-03-13)
+
+
+### Bug Fixes
+
+* remove dependency of ReceiveSlotManager on Meeting ([#2664](https://github.com/webex/webex-js-sdk/issues/2664)) ([82a65e2](https://github.com/webex/webex-js-sdk/commit/82a65e2eb6ce46b3d88e7784d6c60017c7c986b3))
+
+## [3.0.0-beta.41](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.40...v3.0.0-beta.41) (2023-03-09)
+
+
+### Features
+
+* **internal-plugin-support:** allow productAreaTag and issueTypeTag to be in log metadata ([#2650](https://github.com/webex/webex-js-sdk/issues/2650)) ([3d3d95a](https://github.com/webex/webex-js-sdk/commit/3d3d95abe0efb51a32f1bc745a7156ef88eb7b2c))
+
+## [3.0.0-beta.40](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.39...v3.0.0-beta.40) (2023-03-09)
+
+
+### Features
+
+* add start and end apis for breakout sessions feature Spark-400363 ([#2646](https://github.com/webex/webex-js-sdk/issues/2646)) ([7bbab5c](https://github.com/webex/webex-js-sdk/commit/7bbab5cf5e2b6bbcebfda8c2b8c12d6eadeb31ac))
+
+## [3.0.0-beta.39](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.38...v3.0.0-beta.39) (2023-03-08)
+
+
+### Features
+
+* **meetings:** export RemoteMedia class ([#2655](https://github.com/webex/webex-js-sdk/issues/2655)) ([08cd2d5](https://github.com/webex/webex-js-sdk/commit/08cd2d508b89fbfd011cc2be8e0ffbe63411f2d2))
+* provide size hint remote media ([#2653](https://github.com/webex/webex-js-sdk/issues/2653)) ([1a1c3b7](https://github.com/webex/webex-js-sdk/commit/1a1c3b7e1a5b5824894dec6fb23ec43dd472b387))
+
+## [3.0.0-beta.38](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.37...v3.0.0-beta.38) (2023-03-07)
+
+
+### Bug Fixes
+
+* remove code for resetting of source state ([#2652](https://github.com/webex/webex-js-sdk/issues/2652)) ([84b5b61](https://github.com/webex/webex-js-sdk/commit/84b5b611701a5ae932f8cd825ce1a938293b72c3))
+
+## [3.0.0-beta.37](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.35...v3.0.0-beta.37) (2023-03-07)
+
+
+### Bug Fixes
+
+* added converged org id to .env.defaults ([#2644](https://github.com/webex/webex-js-sdk/issues/2644)) ([09097c2](https://github.com/webex/webex-js-sdk/commit/09097c2d39d7bdff7bf6bd4f274f1193bf716515))
+* **plugin-meetings:** add optional chaining around stats lookup ([#2648](https://github.com/webex/webex-js-sdk/issues/2648)) ([4ded82a](https://github.com/webex/webex-js-sdk/commit/4ded82ade0d0e13808a421a10a1a0bf4db12bbaf))
+* **plugin-meetings:** changed SDK to use webrtc-core local tracks internally ([#2638](https://github.com/webex/webex-js-sdk/issues/2638)) ([cb27441](https://github.com/webex/webex-js-sdk/commit/cb2744143e0dd6d0563b69c9c1c8756219627afe))
+
+## [3.0.0-beta.36](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.35...v3.0.0-beta.36) (2023-03-07)
+
+
+### Bug Fixes
+
+* added converged org id to .env.defaults ([#2644](https://github.com/webex/webex-js-sdk/issues/2644)) ([09097c2](https://github.com/webex/webex-js-sdk/commit/09097c2d39d7bdff7bf6bd4f274f1193bf716515))
+* **plugin-meetings:** changed SDK to use webrtc-core local tracks internally ([#2638](https://github.com/webex/webex-js-sdk/issues/2638)) ([cb27441](https://github.com/webex/webex-js-sdk/commit/cb2744143e0dd6d0563b69c9c1c8756219627afe))
+
+## [3.0.0-beta.35](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.34...v3.0.0-beta.35) (2023-03-03)
+
+
+### Features
+
+* **reachability:** add join cookie ([#2634](https://github.com/webex/webex-js-sdk/issues/2634)) ([1d2b353](https://github.com/webex/webex-js-sdk/commit/1d2b3530909680ae2bf7188faadeca9b89733368))
+
+## [3.0.0-beta.34](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.33...v3.0.0-beta.34) (2023-02-27)
+
+
+### Bug Fixes
+
+* merge changes from latest master into beta ([#2631](https://github.com/webex/webex-js-sdk/issues/2631)) ([b49e0db](https://github.com/webex/webex-js-sdk/commit/b49e0db23b9e530c5e2c27be0cde5ed912b682a0))
+
+## [3.0.0-beta.33](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.32...v3.0.0-beta.33) (2023-02-24)
+
+
+### Bug Fixes
+
+* reduced maxMacroblocksLimit for multistream ([#2632](https://github.com/webex/webex-js-sdk/issues/2632)) ([be4fae0](https://github.com/webex/webex-js-sdk/commit/be4fae08399d95c885893208c64cfb8b5882460f))
+
+## [3.0.0-beta.32](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.31...v3.0.0-beta.32) (2023-02-23)
+
+
+### Bug Fixes
+
+* **plugin-meetings:** update degradation logic to use live sources ([#2625](https://github.com/webex/webex-js-sdk/issues/2625)) ([26746af](https://github.com/webex/webex-js-sdk/commit/26746afd597d104199497ff51f18d1c867ba77d8))
+
+## [3.0.0-beta.31](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.30...v3.0.0-beta.31) (2023-02-23)
+
+
+### Bug Fixes
+
+* **plugin-meetings:** add multistream logs to log buffer ([#2626](https://github.com/webex/webex-js-sdk/issues/2626)) ([06ae8f1](https://github.com/webex/webex-js-sdk/commit/06ae8f1f11dbd64d31fdd8a7b445639ec8f49023))
+
+## [3.0.0-beta.30](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.29...v3.0.0-beta.30) (2023-02-23)
+
+
+### Bug Fixes
+
+* emitting SourceUpdate event when memberId is found for ReceiveSlot ([#2627](https://github.com/webex/webex-js-sdk/issues/2627)) ([9efef88](https://github.com/webex/webex-js-sdk/commit/9efef88e1e9b99bcaf1224bdacee374fa9230d24))
+
+## [3.0.0-beta.29](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.28...v3.0.0-beta.29) (2023-02-23)
+
+
+### Features
+
+* **breakout:** add broadcast, askAllReturn methods ([#2615](https://github.com/webex/webex-js-sdk/issues/2615)) ([24affd7](https://github.com/webex/webex-js-sdk/commit/24affd70b19cb82c1e9715dcd15dbcd0e569015a))
+
+## [3.0.0-beta.28](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.27...v3.0.0-beta.28) (2023-02-22)
+
+
+### Bug Fixes
+
+* update memberId on ReceiveSlots when members are updated ([#2624](https://github.com/webex/webex-js-sdk/issues/2624)) ([ec05bd4](https://github.com/webex/webex-js-sdk/commit/ec05bd4cbbff807234a08ae66f1bfe716efcdb0f))
+
+## [3.0.0-beta.27](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.26...v3.0.0-beta.27) (2023-02-21)
+
+
+### Features
+
+* **plugin-meetings:** breakout session, host enable/disable breakout ([#2612](https://github.com/webex/webex-js-sdk/issues/2612)) ([7736913](https://github.com/webex/webex-js-sdk/commit/7736913b5c4cffefd6424121342b2a648667ba00))
+
 ## [3.0.0-beta.26](https://github.com/webex/webex-js-sdk/compare/v3.0.0-beta.25...v3.0.0-beta.26) (2023-02-13)
 
 

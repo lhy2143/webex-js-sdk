@@ -1,4 +1,5 @@
 import {isEmpty} from 'lodash';
+import {LocalCameraTrack, LocalMicrophoneTrack} from '@webex/internal-media-core';
 
 import {MeetingNotActiveError, UserNotJoinedError} from '../common/errors/webex-errors';
 import Metrics from '../metrics';
@@ -374,6 +375,21 @@ MeetingUtil.bothLeaveAndEndMeetingAvailable = (displayHints) =>
   displayHints.includes(DISPLAY_HINTS.LEAVE_TRANSFER_HOST_END_MEETING) ||
   displayHints.includes(DISPLAY_HINTS.LEAVE_END_MEETING);
 
+MeetingUtil.canManageBreakout = (displayHints) =>
+  displayHints.includes(DISPLAY_HINTS.BREAKOUT_MANAGEMENT);
+
+MeetingUtil.isSuppressBreakoutSupport = (displayHints) =>
+  displayHints.includes(DISPLAY_HINTS.UCF_SUPPRESS_BREAKOUTS_SUPPORT);
+
+MeetingUtil.canAdmitLobbyToBreakout = (displayHints) =>
+  !displayHints.includes(DISPLAY_HINTS.DISABLE_LOBBY_TO_BREAKOUT);
+
+MeetingUtil.isBreakoutPreassignmentsEnabled = (displayHints) =>
+  !displayHints.includes(DISPLAY_HINTS.DISABLE_BREAKOUT_PREASSIGNMENTS);
+
+MeetingUtil.canUserAskForHelp = (displayHints) =>
+  !displayHints.includes(DISPLAY_HINTS.DISABLE_ASK_FOR_HELP);
+
 MeetingUtil.lockMeeting = (actions, request, locusUrl) => {
   if (actions && actions.canLock) {
     return request.lockMeeting({locusUrl, lock: true});
@@ -390,11 +406,11 @@ MeetingUtil.unlockMeeting = (actions, request, locusUrl) => {
   return Promise.reject(new PermissionError('Unlock not allowed, due to joined property.'));
 };
 
-MeetingUtil.handleAudioLogging = (audioTrack) => {
+MeetingUtil.handleAudioLogging = (audioTrack: LocalMicrophoneTrack | null) => {
   const LOG_HEADER = 'MeetingUtil#handleAudioLogging -->';
 
   if (audioTrack) {
-    const settings = audioTrack.getSettings();
+    const settings = audioTrack.underlyingTrack.getSettings();
     const {deviceId} = settings;
 
     LoggerProxy.logger.log(LOG_HEADER, `deviceId = ${deviceId}`);
@@ -402,11 +418,11 @@ MeetingUtil.handleAudioLogging = (audioTrack) => {
   }
 };
 
-MeetingUtil.handleVideoLogging = (videoTrack) => {
+MeetingUtil.handleVideoLogging = (videoTrack: LocalCameraTrack | null) => {
   const LOG_HEADER = 'MeetingUtil#handleVideoLogging -->';
 
   if (videoTrack) {
-    const settings = videoTrack.getSettings();
+    const settings = videoTrack.underlyingTrack.getSettings();
     const {deviceId} = settings;
 
     LoggerProxy.logger.log(LOG_HEADER, `deviceId = ${deviceId}`);

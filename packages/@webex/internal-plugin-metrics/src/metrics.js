@@ -6,13 +6,17 @@
 
 import {WebexPlugin} from '@webex/webex-core';
 import {BrowserDetection} from '@webex/common';
+import {OS_NAME, OSMap, CLIENT_NAME} from './config';
 
-import {CLIENT_NAME} from './config';
 import Batcher from './batcher';
 import ClientMetricsBatcher from './client-metrics-batcher';
 import CallDiagnosticEventsBatcher from './call-diagnostic-events-batcher';
 
 const {getOSName, getOSVersion, getBrowserName, getBrowserVersion} = BrowserDetection();
+
+export function getOSNameInternal() {
+  return OSMap[getOSName()] ?? OS_NAME.OTHERS;
+}
 
 function getSparkUserAgent(webex) {
   const {appName, appVersion, appPlatform} = webex?.config ?? {};
@@ -59,21 +63,13 @@ const Metrics = WebexPlugin.extend({
     payload.tags = {
       ...props.tags,
       browser: getBrowserName(),
-      os: getOSName(),
+      os: getOSNameInternal(),
 
       // Node does not like this so we need to check if it exists or not
       // eslint-disable-next-line no-undef
       domain:
         typeof window !== 'undefined' ? window.location.hostname || 'non-browser' : 'non-browser', // Check what else we could measure
-      client_id: this.webex.credentials.config.client_id,
-      user_id: this.webex.internal.device.userId,
     };
-
-    try {
-      payload.tags.org_id = this.webex.credentials.getOrgId();
-    } catch {
-      this.logger.info('metrics: unable to get orgId');
-    }
 
     payload.fields = {
       ...props.fields,
@@ -82,6 +78,7 @@ const Metrics = WebexPlugin.extend({
       sdk_version: this.webex.version,
       platform: 'Web',
       spark_user_agent: getSparkUserAgent(this.webex),
+      client_id: this.webex.credentials.config.client_id,
     };
 
     payload.type = props.type || this.webex.config.metrics.type;
@@ -93,7 +90,7 @@ const Metrics = WebexPlugin.extend({
       },
       locale: 'en-US',
       os: {
-        name: getOSName(),
+        name: getOSNameInternal(),
         version: getOSVersion(),
       },
     };

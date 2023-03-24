@@ -3,7 +3,13 @@
  */
 /* globals navigator */
 
-import {RoapMediaConnection, MultistreamRoapMediaConnection} from '@webex/internal-media-core';
+import {
+  LocalCameraTrack,
+  LocalDisplayTrack,
+  LocalMicrophoneTrack,
+  RoapMediaConnection,
+  MultistreamRoapMediaConnection,
+} from '@webex/internal-media-core';
 import LoggerProxy from '../common/logs/logger-proxy';
 import {AUDIO_INPUT, VIDEO_INPUT, MEDIA_TRACK_CONSTRAINT} from '../constants';
 import Config from '../config';
@@ -42,22 +48,6 @@ const {isBrowser} = BrowserDetection();
  * Extends and enhances adapter.js, i.e., the "media" file from the web client.
  */
 const Media: any = {};
-
-/**
- * @param {boolean} enabled
- * @param {MediaStreamTrack} track
- * @returns {Boolean}
- * @public
- */
-Media.setLocalTrack = (enabled: boolean, track: MediaStreamTrack) => {
-  if (track) {
-    track.enabled = enabled;
-
-    return true;
-  }
-
-  return false;
-};
 
 /**
  * format the media array for send
@@ -115,27 +105,30 @@ Media.getLocalMedia = (options: any, config: object) => {
  * @param {boolean} isMultistream
  * @param {string} debugId string useful for debugging (will appear in media connection logs)
  * @param {Object} options
- * @param {Object} [options.mediaProperties] only applicable to non-multistream connections, contains mediaDirection and local tracks:
+ * @param {Object} [options.mediaProperties] contains mediaDirection and local tracks:
  *                                 audioTrack, videoTrack and shareTrack
  * @param {string} [options.remoteQualityLevel] LOW|MEDIUM|HIGH applicable only to non-multistream connections
  * @param {boolean} [options.enableRtx] applicable only to non-multistream connections
  * @param {boolean} [options.enableExtmap] applicable only to non-multistream connections
  * @param {Object} [options.turnServerInfo]
- * @returns {RoapMediaConnection}
+ * @returns {RoapMediaConnection | MultistreamRoapMediaConnection}
  */
 Media.createMediaConnection = (
   isMultistream: boolean,
   debugId: string,
   options: {
-    mediaProperties?: {
+    mediaProperties: {
       mediaDirection?: {
         receiveAudio: boolean;
         receiveVideo: boolean;
         receiveShare: boolean;
+        sendAudio: boolean;
+        sendVideo: boolean;
+        sendShare: boolean;
       };
-      audioTrack?: MediaStreamTrack;
-      videoTrack?: MediaStreamTrack;
-      shareTrack?: MediaStreamTrack;
+      audioTrack?: LocalMicrophoneTrack;
+      videoTrack?: LocalCameraTrack;
+      shareTrack?: LocalDisplayTrack;
     };
     remoteQualityLevel?: 'LOW' | 'MEDIUM' | 'HIGH';
     enableRtx?: boolean;
@@ -163,6 +156,10 @@ Media.createMediaConnection = (
     return new MultistreamRoapMediaConnection(
       {
         iceServers,
+        enableMainAudio:
+          mediaProperties.mediaDirection?.sendAudio || mediaProperties.mediaDirection?.receiveAudio,
+        enableMainVideo:
+          mediaProperties.mediaDirection?.sendVideo || mediaProperties.mediaDirection?.receiveVideo,
       },
       debugId
     );
@@ -194,9 +191,9 @@ Media.createMediaConnection = (
     },
     {
       send: {
-        audio: audioTrack,
-        video: videoTrack,
-        screenShareVideo: shareTrack,
+        audio: audioTrack?.underlyingTrack,
+        video: videoTrack?.underlyingTrack,
+        screenShareVideo: shareTrack?.underlyingTrack,
       },
       receive: {
         audio: mediaDirection.receiveAudio,

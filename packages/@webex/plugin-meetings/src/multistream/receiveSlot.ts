@@ -11,6 +11,7 @@ import EventsScope from '../common/events/events-scope';
 
 export const ReceiveSlotEvents = {
   SourceUpdate: 'sourceUpdate',
+  MaxFsUpdate: 'maxFsUpdate',
 };
 
 export type {SourceState} from '@webex/internal-media-core';
@@ -82,6 +83,25 @@ export class ReceiveSlot extends EventsScope {
   }
 
   /**
+   * Set the max frame size for this slot
+   * @param newFs frame size
+   */
+  public setMaxFs(newFs) {
+    // emit event for media request manager to listen to
+
+    this.emit(
+      {
+        file: 'meeting/receiveSlot',
+        function: 'findMemberId',
+      },
+      ReceiveSlotEvents.MaxFsUpdate,
+      {
+        maxFs: newFs,
+      }
+    );
+  }
+
+  /**
    * Getter for sourceState
    */
   public get sourceState() {
@@ -91,7 +111,7 @@ export class ReceiveSlot extends EventsScope {
   /**
    * registers event handlers with the underlying ReceiveSlot
    */
-  setupEventListeners() {
+  private setupEventListeners() {
     const scope = {
       file: 'meeting/receiveSlot',
       function: 'setupEventListeners',
@@ -116,6 +136,29 @@ export class ReceiveSlot extends EventsScope {
     );
   }
 
+  /** Tries to find the member id for this receive slot if it hasn't got one */
+  public findMemberId() {
+    if (this.#memberId === undefined && this.#csi) {
+      this.#memberId = this.findMemberIdCallback(this.#csi);
+
+      if (this.#memberId) {
+        // if we found the memberId, simulate source update so that the client app knows that something's changed
+        this.emit(
+          {
+            file: 'meeting/receiveSlot',
+            function: 'findMemberId',
+          },
+          ReceiveSlotEvents.SourceUpdate,
+          {
+            state: this.#sourceState,
+            csi: this.#csi,
+            memberId: this.#memberId,
+          }
+        );
+      }
+    }
+  }
+
   /**
    * The MediaStream object associated with this slot.
    *
@@ -130,18 +173,5 @@ export class ReceiveSlot extends EventsScope {
    */
   get wcmeReceiveSlot(): WcmeReceiveSlot {
     return this.mcReceiveSlot;
-  }
-
-  /**
-   * Resets the source state to the default 'no source' value.
-   * This function should be called on receive slots that are
-   * no longer part of a media request. It's needed because WCME
-   * does not send any more events on such slots, so the sourceState
-   * value would not represent the truth anymore.
-   */
-  public resetSourceState() {
-    this.#sourceState = 'no source';
-    this.#csi = undefined;
-    this.#memberId = undefined;
   }
 }

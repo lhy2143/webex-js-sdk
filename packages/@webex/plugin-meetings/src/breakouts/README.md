@@ -107,10 +107,6 @@ note: None of these are currently implemented
 // Move a participant to breakout
 breakout.move(participant)
 
-// Assign a particpant to a breakout
-// Not sure whether there is any difference from move
-breakout.assign(participant)
-
 // Remove someone from a breakout session
 // This returns them to the main session
 breakout.remove(participant)
@@ -119,20 +115,42 @@ breakout.remove(participant)
 // This can only be done when breakouts are inactive
 breakout.delete()
 
-// Create a breakout session
-breakouts.create(sessionName)
+/*
+Create breakout sessions, Type is array
+Format: [{'name':'session1', "anyoneCanJoin" : true}]
+*/
+breakouts.create(sessions)
+
+// Delete all breakout sessions
+breakouts.clearSessions()
 
 // Rename an existing breakout session
 breakout.rename(newSessionName)
 
-// Start breakout sessions
-breakouts.start()
+// Start breakout sessions with necessary params
+breakouts.start(params)
 
-// End breakout sessions
-breakouts.end()
+// Assign a particpant/participants to breakouts/a breakout
+// sessions should be like: [{id:'xx',memberIds:['111'],emails:['111@ss.com']},...]
+breakouts.assign(sessions)
+
+// End breakout sessions with necessary params
+breakouts.end(params)
+
+// get breakout sessions with/without param editlock
+breakouts.getBreakout(editlock?)
 
 // Enable breakout sessions
 breakouts.enable()
+
+// Enable and lock breakout 
+breakouts.enableAndLockBreakout()
+
+// Lock breakout
+breakouts.lockBreakout()
+
+// Unlock breakout
+breakouts.unLockEditBreakout()
 
 // Disable breakout sessions
 breakouts.disable()
@@ -141,11 +159,11 @@ breakouts.disable()
 breakouts.askAllToReturn()
 
 // Send a message to a breakout session
-// You can determine which participant types receive the message
+// You can determine which participant types receive the message, if no type set, default is to all participants
 breakout.broadcast(message, {participants: boolean, cohosts: boolean, presenters: boolean})
 
 // Send a message to All breakout sessions
-// You can determine which participant types receive the message
+// You can determine which participant types receive the message,  if no type set, default is to all participants
 breakouts.broadcast(message, {participants: boolean, cohosts: boolean, presenters: boolean})
 
 // When breakouts are active you can cancel the automatic end of all sessions by calling this

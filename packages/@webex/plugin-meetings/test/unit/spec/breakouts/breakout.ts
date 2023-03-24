@@ -5,7 +5,7 @@ import Members from '@webex/plugin-meetings/src/members';
 import MockWebex from '@webex/test-helper-mock-webex';
 import sinon from 'sinon';
 
-describe.only('plugin-meetings', () => {
+describe('plugin-meetings', () => {
   describe('breakout', () => {
     let webex;
     let breakout;
@@ -99,6 +99,36 @@ describe.only('plugin-meetings', () => {
       });
     });
 
+    describe('#broadcast', () => {
+      it('makes the request as expected', async () => {
+        breakout.breakoutRequest.broadcast = sinon
+          .stub()
+          .returns(Promise.resolve('REQUEST_RETURN_VALUE'));
+        let result = await breakout.broadcast('hello');
+        assert.calledWithExactly(breakout.breakoutRequest.broadcast, {
+          url: 'url',
+          message: 'hello',
+          options: undefined,
+          groupId: 'groupId',
+          sessionId: 'sessionId',
+        });
+
+        assert.equal(result, 'REQUEST_RETURN_VALUE');
+
+        result = await breakout.broadcast('hello', {presenters: true, cohosts: true});
+
+        assert.calledWithExactly(breakout.breakoutRequest.broadcast, {
+          url: 'url',
+          message: 'hello',
+          options: {presenters: true, cohosts: true},
+          groupId: 'groupId',
+          sessionId: 'sessionId',
+        });
+
+        assert.equal(result, 'REQUEST_RETURN_VALUE');
+      });
+    });
+
     describe('#parseRoster', () => {
       it('calls locusParticipantsUpdate', () => {
         breakout.members = {
@@ -110,16 +140,6 @@ describe.only('plugin-meetings', () => {
 
         assert.calledOnceWithExactly(breakout.members.locusParticipantsUpdate, locusData);
         assert.equal(result, undefined);
-      });
-    });
-
-    describe('#assign', () => {
-      it('assign attendee to a breakout session', async () => {
-        breakout.assign = sinon.stub().returns(Promise.resolve('ASSIGN_RETURN_VALUE'));
-        const params = {assigned: []};
-        const result = await breakout.assign(params);
-        assert.calledOnceWithExactly(breakout.assign, params);
-        assert.equal(result, 'ASSIGN_RETURN_VALUE');
       });
     });
   });

@@ -17,6 +17,8 @@ interface IInMeetingActions {
   canUnsetMuteOnEntry?: boolean;
   canSetDisallowUnmute?: boolean;
   canUnsetDisallowUnmute?: boolean;
+  canSetMuted?: boolean;
+  canUnsetMuted?: boolean;
   canAssignHost?: boolean;
   canStartRecording?: boolean;
   canPauseRecording?: boolean;
@@ -37,6 +39,10 @@ interface IInMeetingActions {
   waitingForOthersToJoin?: boolean;
   canEnableReactions?: boolean;
   canSendReactions?: boolean;
+  canManageBreakout?: boolean;
+  canAdmitLobbyToBreakout?: boolean;
+  isBreakoutPreassignmentsEnabled?: boolean;
+  canUserAskForHelp?: boolean;
 }
 
 /**
@@ -71,6 +77,10 @@ export default class InMeetingActions implements IInMeetingActions {
 
   canUnsetDisallowUnmute = null;
 
+  canSetMuted = null;
+
+  canUnsetMuted = null;
+
   canRaiseHand = null;
 
   canLowerAllHands = null;
@@ -101,6 +111,14 @@ export default class InMeetingActions implements IInMeetingActions {
 
   canSendReactions = null;
 
+  canManageBreakout = null;
+
+  canAdmitLobbyToBreakout = null;
+
+  isBreakoutPreassignmentsEnabled = null;
+
+  canUserAskForHelp = null;
+
   /**
    * Returns all meeting action options
    * @returns {Object}
@@ -114,6 +132,8 @@ export default class InMeetingActions implements IInMeetingActions {
     canSetMuteOnEntry: this.canSetMuteOnEntry,
     canUnsetMuteOnEntry: this.canUnsetMuteOnEntry,
     canSetDisallowUnmute: this.canSetDisallowUnmute,
+    canSetMuted: this.canSetMuted,
+    canUnsetMuted: this.canUnsetMuted,
     canUnsetDisallowUnmute: this.canUnsetDisallowUnmute,
     canStartRecording: this.canStartRecording,
     canPauseRecording: this.canPauseRecording,
@@ -134,6 +154,10 @@ export default class InMeetingActions implements IInMeetingActions {
     waitingForOthersToJoin: this.waitingForOthersToJoin,
     canEnableReactions: this.canEnableReactions,
     canSendReactions: this.canSendReactions,
+    canManageBreakout: this.canManageBreakout,
+    canAdmitLobbyToBreakout: this.canAdmitLobbyToBreakout,
+    isBreakoutPreassignmentsEnabled: this.isBreakoutPreassignmentsEnabled,
+    canUserAskForHelp: this.canUserAskForHelp,
   });
 
   /**

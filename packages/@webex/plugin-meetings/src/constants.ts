@@ -297,6 +297,8 @@ export const EVENT_TRIGGERS = {
   MEETING_RINGING_STOP: 'meeting:ringingStop',
   MEETING_SELF_LOBBY_WAITING: 'meeting:self:lobbyWaiting',
   MEETING_SELF_GUEST_ADMITTED: 'meeting:self:guestAdmitted',
+  MEETING_SELF_VIDEO_MUTED_BY_OTHERS: 'meeting:self:videoMutedByOthers',
+  MEETING_SELF_VIDEO_UNMUTED_BY_OTHERS: 'meeting:self:videoUnmutedByOthers',
   MEETING_SELF_MUTED_BY_OTHERS: 'meeting:self:mutedByOthers',
   MEETING_SELF_UNMUTED_BY_OTHERS: 'meeting:self:unmutedByOthers',
   MEETING_SELF_REQUESTED_TO_UNMUTE: 'meeting:self:requestedToUnmute',
@@ -452,6 +454,11 @@ export const ERROR_DICTIONARY = {
     MESSAGE: 'Captcha is required.',
     CODE: 8,
   },
+  BREAKOUT_EDIT: {
+    NAME: 'BreakoutEditLockedError',
+    MESSAGE: 'Edit lock token mismatch',
+    CODE: 9,
+  },
 };
 
 export const FLOOR_ACTION = {
@@ -473,6 +480,7 @@ export const HTTP_VERBS = {
   POST: 'POST',
   GET: 'GET',
   PATCH: 'PATCH',
+  DELETE: 'DELETE',
 };
 
 // https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/iceGatheringState
@@ -521,6 +529,9 @@ export const LOCUS = {
 export const BREAKOUTS = {
   STATUS: {
     CLOSING: 'CLOSING',
+    CLOSED: 'CLOSED',
+    PENDING: 'PENDING',
+    OPEN: 'OPEN',
   },
   EVENTS: {
     BREAKOUTS_CLOSING: 'BREAKOUTS_CLOSING',
@@ -529,6 +540,7 @@ export const BREAKOUTS = {
   },
   SESSION_TYPES: {
     MAIN: 'MAIN',
+    BREAKOUT: 'BREAKOUT',
   },
   SESSION_STATES: {
     ACTIVE: 'active',
@@ -541,7 +553,19 @@ export const BREAKOUTS = {
   ACTION: {
     START: 'START',
     CLOSE: 'CLOSE',
+    DELETE: 'DELETE',
   },
+  ERROR_CODE: {
+    EDIT_LOCK_TOKEN_MISMATCH: 201409024,
+    EDIT_NOT_AUTHORIZED: 201403007,
+  },
+  DEFAULT_DURATION: 60000,
+  EDIT_LOCK_STATUS: {
+    LOCKED: 'LOCKED',
+    NOT_LOCKED: 'NOT_LOCKED',
+    UNKNOWN: 'UNKNOWN',
+  },
+  DEFAULT_TTL: 30,
 };
 
 export const LOCUSINFO = {
@@ -554,6 +578,7 @@ export const LOCUSINFO = {
     CONTROLS_ENTRY_EXIT_TONE_UPDATED: 'CONTROLS_ENTRY_EXIT_TONE_UPDATED',
     SELF_UNADMITTED_GUEST: 'SELF_UNADMITTED_GUEST',
     SELF_ADMITTED_GUEST: 'SELF_ADMITTED_GUEST',
+    SELF_REMOTE_VIDEO_MUTE_STATUS_UPDATED: 'SELF_REMOTE_VIDEO_MUTE_STATUS_UPDATED',
     SELF_REMOTE_MUTE_STATUS_UPDATED: 'SELF_REMOTE_MUTE_STATUS_UPDATED',
     LOCAL_UNMUTE_REQUESTED: 'LOCAL_UNMUTE_REQUESTED',
     LOCAL_UNMUTE_REQUIRED: 'LOCAL_UNMUTE_REQUIRED',
@@ -769,6 +794,15 @@ export const DISPLAY_HINTS = {
   DISABLE_MUTE_ON_ENTRY: 'DISABLE_MUTE_ON_ENTRY',
   ENABLE_HARD_MUTE: 'ENABLE_HARD_MUTE',
   DISABLE_HARD_MUTE: 'DISABLE_HARD_MUTE',
+  MUTE_ALL: 'MUTE_ALL',
+  UNMUTE_ALL: 'UNMUTE_ALL',
+
+  // breakout session
+  BREAKOUT_MANAGEMENT: 'BREAKOUT_MANAGEMENT',
+  UCF_SUPPRESS_BREAKOUTS_SUPPORT: 'UCF_SUPPRESS_BREAKOUTS_SUPPORT',
+  DISABLE_ASK_FOR_HELP: 'DISABLE_ASK_FOR_HELP',
+  DISABLE_BREAKOUT_PREASSIGNMENTS: 'DISABLE_BREAKOUT_PREASSIGNMENTS',
+  DISABLE_LOBBY_TO_BREAKOUT: 'DISABLE_LOBBY_TO_BREAKOUT',
 };
 
 export const SELF_ROLES = {
@@ -858,7 +892,8 @@ export const RESOURCE = {
 };
 
 export const REACHABILITY = {
-  localStorage: 'reachability.result',
+  localStorageResult: 'reachability.result',
+  localStorageJoinCookie: 'reachability.joinCookie',
   namespace: 'Reachability',
 };
 

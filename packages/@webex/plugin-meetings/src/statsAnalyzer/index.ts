@@ -492,23 +492,23 @@ export class StatsAnalyzer extends EventsScope {
       const getCurrentStatsTotals = (keyPrefix: string, value: string): number =>
         Object.keys(this.statsResults)
           .filter((key) => key.startsWith(keyPrefix))
-          .reduce((prev, cur) => prev + (this.statsResults[cur].recv[value] || 0), 0);
+          .reduce((prev, cur) => prev + (this.statsResults[cur]?.recv[value] || 0), 0);
 
       const getPreviousStatsTotals = (keyPrefix: string, value: string): number =>
         Object.keys(this.statsResults)
           .filter((key) => key.startsWith(keyPrefix))
-          .reduce((prev, cur) => prev + (this.lastStatsResults[cur].recv[value] || 0), 0);
+          .reduce((prev, cur) => prev + (this.lastStatsResults[cur]?.recv[value] || 0), 0);
 
       const getCurrentResolutionsStatsTotals = (keyPrefix: string, value: string): number =>
         Object.keys(this.statsResults)
           .filter((key) => key.startsWith(keyPrefix))
-          .reduce((prev, cur) => prev + (this.statsResults.resolutions[cur].recv[value] || 0), 0);
+          .reduce((prev, cur) => prev + (this.statsResults.resolutions[cur]?.recv[value] || 0), 0);
 
       const getPreviousResolutionsStatsTotals = (keyPrefix: string, value: string): number =>
         Object.keys(this.statsResults)
           .filter((key) => key.startsWith(keyPrefix))
           .reduce(
-            (prev, cur) => prev + (this.lastStatsResults.resolutions[cur].recv[value] || 0),
+            (prev, cur) => prev + (this.lastStatsResults.resolutions[cur]?.recv[value] || 0),
             0
           );
 
@@ -853,6 +853,14 @@ export class StatsAnalyzer extends EventsScope {
     if (result.bytesSent) {
       let kilobytes = 0;
 
+      if (result.frameWidth && result.frameHeight) {
+        this.statsResults.resolutions[mediaType][sendrecvType].width = result.frameWidth;
+        this.statsResults.resolutions[mediaType][sendrecvType].height = result.frameHeight;
+        this.statsResults.resolutions[mediaType][sendrecvType].framesSent = result.framesSent;
+        this.statsResults.resolutions[mediaType][sendrecvType].hugeFramesSent =
+          result.hugeFramesSent;
+      }
+
       if (!this.statsResults.internal[mediaType][sendrecvType].prevBytesSent) {
         this.statsResults.internal[mediaType][sendrecvType].prevBytesSent = result.bytesSent;
       }
@@ -925,6 +933,13 @@ export class StatsAnalyzer extends EventsScope {
 
     if (result.bytesReceived) {
       let kilobytes = 0;
+
+      if (result.frameWidth && result.frameHeight) {
+        this.statsResults.resolutions[mediaType][sendrecvType].width = result.frameWidth;
+        this.statsResults.resolutions[mediaType][sendrecvType].height = result.frameHeight;
+        this.statsResults.resolutions[mediaType][sendrecvType].framesReceived =
+          result.framesReceived;
+      }
 
       if (!this.statsResults.internal[mediaType][sendrecvType].prevBytesReceived) {
         this.statsResults.internal[mediaType][sendrecvType].prevBytesReceived =
@@ -1136,13 +1151,6 @@ export class StatsAnalyzer extends EventsScope {
 
     const sendrecvType =
       result.remoteSource === true ? STATS.RECEIVE_DIRECTION : STATS.SEND_DIRECTION;
-
-    if (result.frameWidth && result.frameHeight) {
-      this.statsResults.resolutions[mediaType][sendrecvType].width = result.frameWidth;
-      this.statsResults.resolutions[mediaType][sendrecvType].height = result.frameHeight;
-      this.statsResults.resolutions[mediaType][sendrecvType].framesSent = result.framesSent;
-      this.statsResults.resolutions[mediaType][sendrecvType].hugeFramesSent = result.hugeFramesSent;
-    }
 
     if (sendrecvType === STATS.RECEIVE_DIRECTION) {
       this.statsResults.resolutions[mediaType][sendrecvType].framesReceived = result.framesReceived;

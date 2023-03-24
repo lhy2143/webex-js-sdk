@@ -17,6 +17,8 @@ describe('plugin-meetings', () => {
         canUnsetMuteOnEntry: null,
         canSetDisallowUnmute: null,
         canUnsetDisallowUnmute: null,
+        canSetMuted: null,
+        canUnsetMuted: null,
         canStopRecording: null,
         canRaiseHand: null,
         canLowerAllHands: null,
@@ -33,6 +35,10 @@ describe('plugin-meetings', () => {
         waitingForOthersToJoin: null,
         canEnableReactions: null,
         canSendReactions: null,
+        canManageBreakout: null,
+        canAdmitLobbyToBreakout: null,
+        canUserAskForHelp: null,
+        isBreakoutPreassignmentsEnabled: null,
         ...expected
       };
 
@@ -72,7 +78,11 @@ describe('plugin-meetings', () => {
       'canSelectSpokenLanguages',
       'waitingForOthersToJoin',
       'canEnableReactions',
-      'canSendReactions'
+      'canSendReactions',
+      'canManageBreakout',
+      'canAdmitLobbyToBreakout',
+      'canUserAskForHelp',
+      'isBreakoutPreassignmentsEnabled'
     ].forEach((key) => {
       it(`get and set for ${key} work as expected`, () => {
         const inMeetingActions = new InMeetingActions();

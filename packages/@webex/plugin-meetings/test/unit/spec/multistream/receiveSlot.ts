@@ -83,22 +83,73 @@ describe('ReceiveSlot', () => {
     assert.strictEqual(receiveSlot.sourceState, 'live');
   });
 
-  it('resets source related properties when resetSourceState() is called', () => {
-    const csi = 123456;
-    const fakeMemberId = '00000001-5555-6666-9012-345678901234';
+  describe('findMemberId()', () => {
+    it('doesn\'t do anything if csi is not set', () => {
+      // by default the receiveSlot does not have any csi or member id
+      receiveSlot.findMemberId();
 
-    findMemberIdCallbackStub.returns(fakeMemberId);
+      assert.notCalled(findMemberIdCallbackStub);
+    });
 
-    fakeWcmeSlot.emit(WcmeReceiveSlotEvents.SourceUpdate, 'live', csi);
+    it('finds a member id if member id is undefined and CSI is known', () => {
+      let emittedSourceUpdateEvent = null;
 
-    assert.strictEqual(receiveSlot.memberId, fakeMemberId);
-    assert.strictEqual(receiveSlot.csi, csi);
-    assert.strictEqual(receiveSlot.sourceState, 'live');
+      // setup receiveSlot to have a csi without a member id
+      const csi = 12345;
+      const fakeMemberId = 'aaa-bbb-ccc-ddd';
+      fakeWcmeSlot.emit(WcmeReceiveSlotEvents.SourceUpdate, 'live', csi);
+      findMemberIdCallbackStub.reset();
+      findMemberIdCallbackStub.returns(fakeMemberId);
 
-    receiveSlot.resetSourceState();
+      receiveSlot.on(ReceiveSlotEvents.SourceUpdate, (data) => {
+        emittedSourceUpdateEvent = data;
+      });
 
-    assert.strictEqual(receiveSlot.memberId, undefined);
-    assert.strictEqual(receiveSlot.csi, undefined);
-    assert.strictEqual(receiveSlot.sourceState, 'no source');
+      receiveSlot.findMemberId();
+
+      assert.calledOnce(findMemberIdCallbackStub);
+      assert.calledWith(findMemberIdCallbackStub, csi);
+
+      assert.deepEqual(emittedSourceUpdateEvent, {
+        state: 'live',
+        csi,
+        memberId: fakeMemberId,
+      });
+
+    });
+
+    it('doesn\'t do anything if member id already set', () => {
+      // setup receiveSlot to have a csi and a member id
+      const csi = 12345;
+      const memberId = '12345678-1234-5678-9012-345678901234';
+
+      findMemberIdCallbackStub.returns(memberId);
+
+      fakeWcmeSlot.emit(WcmeReceiveSlotEvents.SourceUpdate, 'live', csi);
+      findMemberIdCallbackStub.reset();
+
+      receiveSlot.findMemberId();
+
+      assert.notCalled(findMemberIdCallbackStub);
+    });
+  });
+
+  describe('setMaxFs()', () => {
+    it('emits the correct event', () => {
+      sinon.stub(receiveSlot, 'emit');
+      receiveSlot.setMaxFs(100);
+
+      assert.calledOnceWithExactly(
+        receiveSlot.emit,
+        {
+          file: 'meeting/receiveSlot',
+          function: 'findMemberId',
+        },
+        ReceiveSlotEvents.MaxFsUpdate,
+        {
+          maxFs: 100,
+        }
+      );
+    })
   });
 });
