@@ -611,7 +611,7 @@ export default class Meeting extends StatelessWebexPlugin {
      * @memberof Meeting
      */
     // @ts-ignore
-    this.breakouts = new Breakouts({}, {parent: this.webex});
+    this.breakouts = new Breakouts({meeting: new WeakRef(this)}, {parent: this.webex});
     /**
      * helper class for managing receive slots (for multistream media connections)
      */
@@ -1509,6 +1509,8 @@ export default class Meeting extends StatelessWebexPlugin {
         }
       | any
   ) {
+    // eslint-disable-next-line no-console
+    console.log(888, options);
     if (options) {
       const {event, trackingId, mediaConnections} = options;
 
@@ -1659,6 +1661,8 @@ export default class Meeting extends StatelessWebexPlugin {
       ...pick(this.config.metrics, ['clientType', 'subClientType']),
       ...options,
     });
+    // eslint-disable-next-line no-console
+    console.log(777, payload, options);
 
     // @ts-ignore - fix type
     return this.webex.internal.metrics.submitCallDiagnosticEvents(payload);

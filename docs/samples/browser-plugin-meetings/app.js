@@ -2976,14 +2976,18 @@ function viewBreakouts(event) {
     const assigned = Object.values(members).map(member=>member.id);
     button.onclick = () => {
       meeting.breakouts.breakouts.forEach(bo => {
-        if (bo.sessionId !== breakoutSession.sessionId && !bo.isMain){
+        if (bo.sessionId != breakoutSession.sessionId && !bo.isMain){
           // move to main
-          meeting.breakouts.assign([{
+          breakoutSession.assign([{
+            anyoneCanJoin: true,
             id: breakoutSession.sessionId,
-            memberIds:[],
+            name: breakoutSession.name,
+            assigned:[],
           },{
+            anyoneCanJoin: true,
             id: bo.sessionId,
-            memberIds: assigned,
+            name: bo.name,
+            assigned,
           }])
         }
       });
@@ -3041,6 +3045,9 @@ function viewBreakouts(event) {
         populateStageSelector();
       });
     }
+    assignControls.appendChild(createAssignSessionButton(breakoutSession));
+    moveControls.appendChild(createMoveSessionButton(breakoutSession));
+
   });
 
   thead.appendChild(theadRow);
