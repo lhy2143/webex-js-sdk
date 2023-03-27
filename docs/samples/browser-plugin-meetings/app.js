@@ -2977,17 +2977,13 @@ function viewBreakouts(event) {
     button.onclick = () => {
       meeting.breakouts.breakouts.forEach(bo => {
         if (bo.sessionId != breakoutSession.sessionId && !bo.isMain){
-          // move to main
-          breakoutSession.assign([{
-            anyoneCanJoin: true,
+           // move to main
+           meeting.breakouts.assign([{
             id: breakoutSession.sessionId,
-            name: breakoutSession.name,
-            assigned:[],
+            memberIds:[],
           },{
-            anyoneCanJoin: true,
             id: bo.sessionId,
-            name: bo.name,
-            assigned,
+            memberIds: assigned,
           }])
         }
       });
